@@ -1,10 +1,6 @@
 import * as Path from 'path';
+import * as QuickLRU from 'quick-lru';
 import { ComponentModule } from '../browser/types';
-export const devices = {
-  phone: 'iPhone X',
-  tablet: 'iPad Pro 12.9"',
-  desktop: 'MacBook Pro 16"',
-};
 export function resolveCompiler() {
   return require(require('vite/dist/node/utils/resolveVue').resolveVue(process.cwd()).compiler);
 }
@@ -16,8 +12,15 @@ export function s(value: any) {
 export class ComponentMetadataStore {
   private components = new Map<string, Omit<ComponentModule, 'loader'>>();
   private text: string;
-
-  constructor(public root: string) {}
+  private cache = new QuickLRU<string, { name: string; device: string }[]>({ maxSize: 1000 });
+  constructor(
+    public root: string,
+    public devices = {
+      phone: 'iPhone X',
+      tablet: 'iPad Pro 12.9"',
+      desktop: 'MacBook Pro 16"',
+    }
+  ) {}
 
   get(fileName: string): Readonly<Omit<ComponentModule, 'loader'>> {
     return this.components.get(fileName);
@@ -45,24 +48,34 @@ export class ComponentMetadataStore {
     this.text = '';
 
     const component = this.components.get(fileName);
+
+    if (this.cache.has(content)) {
+      component.previews = this.cache.get(content);
+    } else {
+      this.cache.set(content, (component.previews = this.parse(fileName, content)));
+    }
+  }
+
+  private parse(fileName: string, content: string) {
     const { parse } = resolveCompiler();
     const { descriptor } = parse(content, { filename: fileName });
+    return descriptor.customBlocks
+      .map((block, index) => {
+        if (block.type === 'preview') {
+          const name = block.attrs.name || `Preview ${index}`;
+          const device = this.devices[block.attrs.device] || 'iPhone X';
 
-    component.previews = [];
-    descriptor.customBlocks.forEach((block, index) => {
-      if (block.type === 'preview') {
-        const name = block.attrs.name || `Preview ${index}`;
-        const device = devices[block.attrs.device] || 'iPhone X';
-
-        component.previews.push({ name, device });
-      }
-    });
+          return { name, device };
+        }
+      })
+      .filter(Boolean);
   }
 
   getText() {
     if (this.text) {
       return this.text;
     }
+
     const components = Array.from(this.components.values());
 
     components.sort((a, b) => a.name.localeCompare(b.name));

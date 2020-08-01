@@ -2,16 +2,17 @@
 import { inject, computed, ref, watch, markRaw, defineComponent, provide } from 'vue';
 import { COMPONENTS, ZOOM, THEME } from '../config';
 import { ComponentModule } from '../types';
-import Device from './Device.vue';
+import Preview from './Preview.vue';
 
 const current = ref<string>(localStorage.getItem('@preview:current'));
 const currentPreview = ref<Record<string, boolean>>({});
 const defaultPreviews = [
   { name: 'Phone', device: 'iPhone X' },
+  { name: 'Tablet', device: 'iPad Pro 12.9"' },
   { name: 'Desktop', device: 'MacBook Pro 16"' },
 ];
 export default defineComponent({
-  components: { Device },
+  components: { Preview },
   setup() {
     const components = inject(COMPONENTS)!;
     const zoom = ref(50);
@@ -21,7 +22,7 @@ export default defineComponent({
       theme.value = 'dark';
     }
 
-    watch(current, value => localStorage.setItem('@preview:current', value))
+    watch(current, (value) => localStorage.setItem('@preview:current', value));
     provide(ZOOM, zoom);
     provide(THEME, theme);
 
@@ -118,11 +119,10 @@ if (import.meta.hot) {
       <template v-if="component">
         <template v-for="preview of component.previews">
           <template v-if="currentPreview[getPreviewId(component.id, preview.name)] !== false">
-            <Device
+            <Preview
               :key="component.id + ':' + preview.name"
               :name="preview.name"
-              :data-preview-name="preview.name"
-              :type="preview.device"
+              :device="preview.device"
               :src="'/preview.html?' + getPreviewId(component.id, preview.name)"
             />
           </template>

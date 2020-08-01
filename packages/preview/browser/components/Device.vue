@@ -1,142 +1,109 @@
 <script lang="ts">
-import { defineComponent, computed, ref, watch, inject } from 'vue';
-import devices, { DeviceFrame } from '../devices';
-import { ZOOM, THEME } from '../config';
+import { defineComponent, ref, computed } from 'vue';
+import Browser from './Browser.vue';
+import { DeviceSpecs } from '../devices';
 
 export default defineComponent({
   props: {
     name: { type: String, required: true },
     type: { type: String, required: true },
-    src: { type: String, required: true },
+    width: { type: Number, required: true },
+    height: { type: Number, required: true },
+    offset: {
+      type: Object as () => DeviceSpecs['offset'],
+      default: () => ({ top: 0, left: 0, bottom: 0, right: 0 }),
+    },
+    deviceFrame: { type: String, required: true },
+    screenClipPath: { type: String },
+    features: { type: Object as () => DeviceSpecs['features'], required: true },
+    orientation: {
+      type: String as () => DeviceSpecs['features']['orientation'][0],
+      required: true,
+    },
+    style: { type: Object },
   },
-  setup(props) {
-    const zoom = ref(50);
-    const theme = inject(THEME);
-    const orientation = ref('portrait');
-    const device = computed<DeviceFrame>(() => devices[props.type]);
-    const scale = computed(() => zoom.value / 100);
-    const backgroundColor = computed(() => (theme.value === 'dark' ? '#000' : '#fff'));
+  components: { Browser },
+  inheritAttrs: false,
+  setup(props, { attrs }) {
+    const config = computed(() => {
+      const { orientation, width, height, offset, style } = props;
+      const transform = style?.transform || '';
 
-    const screen = computed(() => {
-      const isLandscape = orientation.value === 'landscape';
-      const zoom = scale.value;
-
-      if (device.value) {
-        const { width, height, offset } = device.value;
-
-        if (isLandscape) {
-          return {
-            width: height,
-            height: width,
-            padding: `${offset.right}px ${offset.bottom}px ${offset.left}px ${offset.top}px`,
-          };
-        }
-
+      if (orientation === 'Landscape (left)') {
         return {
-          width: width,
-          height: height,
-          padding: `${offset.top}px ${offset.right}px ${offset.bottom}px ${offset.left}px`,
+          width: height,
+          height: width,
+          device: {
+            ...style,
+            transform: `rotate(-90deg) ${transform}`,
+          },
+          screen: {
+            transform: `rotate(90deg)`,
+          },
         };
       }
 
-      return { width: 400, height: 400, padding: 20 * zoom + 'px' };
-    });
-    const frame = computed(() => {
-      const isLandscape = orientation.value === 'landscape';
-      const zoom = scale.value;
-
-      if (device.value) {
-        const { width, height, offset, frame, screen: clip } = device.value;
-
-        const w = (width + offset.left + offset.right) * zoom + 'px';
-        const h = (height + offset.top + offset.bottom) * zoom + 'px';
-
-        if (isLandscape) {
-          return { width: h, height: w, bg: frame, clip };
-        }
-
-        return { width: w, height: h, bg: frame, clip };
+      if (orientation === 'Landscape (right)') {
+        return {
+          width: height,
+          height: width,
+          device: {
+            ...style,
+            transform: `rotate(90deg) ${transform} `,
+          },
+          screen: {
+            transform: `rotate(-90deg) translateX(${width - height}px)`,
+          },
+        };
       }
 
-      return { width: 440 * zoom + 'px', height: 440 * zoom + 'px', bg: '' };
+      return { width: width, height: height, device: style };
     });
 
-    return { zoom, orientation, scale, frame, screen, backgroundColor };
+    return { config };
   },
 });
 </script>
 
 <template>
-  <div class="container">
-    <div v-if="name">
-      <a class="name" :href="src" target="_blank">{{ name }}</a>
-    </div>
-    <div class="controls">
-      <button @click="zoom = 25">25%</button>
-      <button @click="zoom = 50">50%</button>
-      <button @click="zoom = 100">100%</button>
-      <button @click="zoom = 150">150%</button>
-    </div>
-    <div class="device" :style="frame">
-      <div
-        style="transform-origin: top left; box-sizing: content-box; background-size: 100% 100%;"
-        :data-bg="frame.bg"
-        :style="{
-          transform: `scale(${scale})`,
-          backgroundImage: `url(${frame.bg})`,
-          padding: screen.padding,
-          width: screen.width + 'px',
-          height: screen.height + 'px',
-        }"
-      >
-        <div :style="{ clipPath: frame.clip ? `url(${frame.clip}#c1)` : null }">
-          <iframe
-            :src="src"
-            :width="screen.width"
-            :height="screen.height"
-            importance="high"
-            loading="lazy"
-            referrerpolicy="unsafe-url"
-            style="border: none;"
-            :style="{ backgroundColor: backgroundColor }"
-          />
-        </div>
+  <div
+    class="device"
+    :data-name="name"
+    :style="[
+      config.device,
+      {
+        paddingTop: offset.top + 'px',
+        paddingRight: offset.right + 'px',
+        paddingBottom: offset.bottom + 'px',
+        paddingLeft: offset.left + 'px',
+        backgroundImage: `url(${deviceFrame})`,
+        width: width + 'px',
+        height: height + 'px',
+      },
+    ]"
+  >
+    <div
+      :style="{
+        clipPath: screenClipPath ? `url(${screenClipPath}#c1)` : null,
+        width: width + 'px',
+        height: height + 'px',
+        overflow: 'hidden',
+      }"
+    >
+      <div :style="config.screen">
+        <Browser :device="type" :width="config.width" :height="config.height">
+          <template #default="browser">
+            <slot v-bind="browser" />
+          </template>
+        </Browser>
       </div>
     </div>
-    <div class="device-type">{{ type }}</div>
   </div>
 </template>
 
-<style scoped>
-.container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 1rem;
-}
-
-.controls {
-  display: flex;
-  flex-direction: row;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-
-.controls * {
-  cursor: pointer;
-}
-
+<style>
 .device {
-  margin: 0.5rem 0;
-}
-
-.device-type {
-  font-size: 12px;
-  color: #999;
-}
-
-a.name, a.name:visited {
-  color: inherit;
-  text-decoration: none;
+  box-sizing: content-box;
+  background-size: 100% 100%;
 }
 </style>

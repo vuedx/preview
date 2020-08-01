@@ -1,22 +1,25 @@
-export interface DeviceFrame {
+export interface DeviceSpecs {
   name: string;
+  type: string;
   width: number;
   height: number;
-  ratio: number;
   offset: { top: number; right: number; bottom: number; left: number };
-  frame: string;
-  screen?: string;
+  deviceFrame: string;
+  screenClipPath?: string;
+  features: {
+    orientation?: Array<'Portrait' | 'Landscape (left)' | 'Landscape (right)'>;
+    touch?: boolean;
+  };
 }
 
-import iPhoneX from './frames/iphone-x.svg';
-import iPhoneXScreen from './frames/iphone-x.screen.svg';
-import iPadPro13 from './frames/ipad-pro-13.svg';
-import iPadPro13Screen from './frames/ipad-pro-13.screen.svg';
-import MacBookPro from './frames/macbook-pro.svg';
+interface RawDeviceSpecs extends DeviceSpecs {
+  ratio: number;
+}
 
-const devices: DeviceFrame[] = [
+const devices: RawDeviceSpecs[] = [
   {
     name: 'iPhone X',
+    type: 'iphone',
     width: 828,
     height: 1792,
     ratio: 2,
@@ -26,11 +29,16 @@ const devices: DeviceFrame[] = [
       bottom: 71,
       left: 75,
     },
-    frame: iPhoneX,
-    screen: iPhoneXScreen,
+    deviceFrame: '/@preview/devices/iPhone-X.svg',
+    screenClipPath: '/@preview/devices/iPhone-X.screen.svg',
+    features: {
+      orientation: ['Portrait', 'Landscape (left)', 'Landscape (right)'],
+      touch: true,
+    },
   },
   {
     name: 'iPad Pro 12.9"',
+    type: 'ipad',
     width: 2048,
     height: 2732,
     ratio: 2,
@@ -40,11 +48,16 @@ const devices: DeviceFrame[] = [
       bottom: 96,
       left: 96,
     },
-    frame: iPadPro13,
-    screen: iPadPro13Screen,
+    deviceFrame: '/@preview/devices/iPad-Pro-12.9.svg',
+    screenClipPath: '/@preview/devices/iPad-Pro-12.9.screen.svg',
+    features: {
+      orientation: ['Portrait', 'Landscape (left)', 'Landscape (right)'],
+      touch: true,
+    },
   },
   {
     name: 'MacBook Pro 16"',
+    type: 'desktop',
     width: 3072,
     height: 1920,
     ratio: 2,
@@ -54,14 +67,15 @@ const devices: DeviceFrame[] = [
       bottom: 223,
       left: 419,
     },
-    frame: MacBookPro,
+    deviceFrame: '/@preview/devices/MacBook-Pro-16.svg',
+    features: {},
   },
 ];
 
 export default toMap(devices);
 
-function toMap(devices: DeviceFrame[]) {
-  const map: Record<string, DeviceFrame> = {};
+function toMap(devices: RawDeviceSpecs[]) {
+  const map: Record<string, DeviceSpecs> = {};
 
   devices.forEach((device) => {
     map[device.name] = device;
@@ -72,6 +86,8 @@ function toMap(devices: DeviceFrame[]) {
     device.offset.right /= device.ratio;
     device.offset.bottom /= device.ratio;
     device.offset.left /= device.ratio;
+
+    delete device.ratio;
   });
 
   return map;

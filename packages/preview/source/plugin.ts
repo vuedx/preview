@@ -1,10 +1,11 @@
 import createDebugLogger from 'debug';
 import * as FS from 'fs';
 import * as Path from 'path';
+import * as QuickLRU from 'quick-lru';
 import picomatch from 'picomatch';
-import { ServerPlugin, cachedRead } from 'vite';
+import { ServerPlugin } from 'vite';
 import { CustomBlockTransform } from 'vite/dist/node/transform';
-import { ComponentMetadataStore, s, resolveCompiler, devices } from './ComponentMetadataStore';
+import { ComponentMetadataStore, resolveCompiler, s } from './store';
 
 const debug = createDebugLogger('preview:plugin');
 
@@ -15,6 +16,7 @@ function read(fileName: string) {
 interface PreviewOptions {
   include: string[];
   exclude: string[];
+  deviceAlias?: Record<string, string>;
 }
 
 interface PreviewConfig extends PreviewOptions {
@@ -45,7 +47,12 @@ export function createPreviewPlugin(options: PreviewOptions) {
   };
 }
 
-function createServerPlugin({ include, exclude, templates }: PreviewConfig): ServerPlugin {
+function createServerPlugin({
+  include,
+  exclude,
+  templates,
+  deviceAlias,
+}: PreviewConfig): ServerPlugin {
   const isValid = createMatcher(include, exclude);
 
   return function PreviewServerPlugin({ app, watcher, config }) {
@@ -58,6 +65,10 @@ function createServerPlugin({ include, exclude, templates }: PreviewConfig): Ser
     const userSetupFileJS = Path.resolve(process.cwd(), 'preview.js');
 
     store.root = root;
+    store.devices = {
+      ...store.devices,
+      ...deviceAlias,
+    };
     watcher.on('add', async (fileName) => {
       if (userSetupFileTS === fileName || userSetupFileJS === fileName) {
         await FS.promises.writeFile(
@@ -122,19 +133,24 @@ function createMatcher(include: string[], exclude: string[]) {
 }
 
 function createPreviewBlockProcessor(): CustomBlockTransform {
-  return ({ code, path, query }) => {
-    const component = store.get(path);
+  const cache = new QuickLRU<string, string>({ maxSize: 1000 });
+
+  return ({ code, path, query, id }) => {
+    const cacheKey = id + code;
+    if (cache.has(cacheKey)) return cache.get(cacheKey);
+
     const name = String(query.name || `Preview ${query.index}`);
-    const device = devices[query.device as string] || 'iPhone X';
+    const device = store.devices[query.device as string] || 'iPhone X';
 
     const { compileTemplate } = resolveCompiler();
+    const component = store.get(path);
 
     const result = compileTemplate({
       source: code,
       filename: path,
     });
 
-    return [
+    const output = [
       result.code,
       `export default function(component) {
         const previews = component.__previews__ || (component.__previews__ = []);
@@ -157,5 +173,9 @@ function createPreviewBlockProcessor(): CustomBlockTransform {
       }
       `,
     ].join('\n');
+
+    cache.set(cacheKey, output);
+
+    return output;
   };
 }

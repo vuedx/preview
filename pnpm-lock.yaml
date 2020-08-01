@@ -50,6 +50,7 @@ importers:
       debug: 4.1.1
       minimist: 1.2.5
       picomatch: 2.2.2
+      quick-lru: 5.1.1
     devDependencies:
       source-map-support: 0.5.19
       tailwindcss: 1.6.0
@@ -62,6 +63,7 @@ importers:
       debug: ^4.1.1
       minimist: ^1.2.5
       picomatch: ^2.2.2
+      quick-lru: ^5.1.1
       source-map-support: ^0.5.19
       tailwindcss: ^1.6.0
       typescript: ^3.9.7
@@ -2981,6 +2983,12 @@ packages:
     hasBin: true
     resolution:
       integrity: sha512-BE5CROfVGsx2XIhxGuZAT7rTH9lLeQx/6M0P7DTXQH4IUc3BBzs9JUzt4yzGf3JrH9enkeq6YJBe9CTtkm1WmQ==
+  /quick-lru/5.1.1:
+    dev: false
+    engines:
+      node: '>=10'
+    resolution:
+      integrity: sha512-WuyALRjWPDGtt/wzJiadO5AXY+8hZ80hVpe6MyivgraREW751X3SbhRvG3eLKOYN+8VEvqLcf3wdnt44Z4S4SA==
   /read-cache/1.0.0:
     dependencies:
       pify: 2.3.0
