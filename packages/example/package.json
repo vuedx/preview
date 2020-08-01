@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "dependencies": {
+    "@vue/compiler-sfc": "^3.0.0-rc.5",
+    "tailwindcss": "^1.6.0",
+    "vue": "^3.0.0-rc.5"
+  }
+}

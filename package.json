@@ -14,7 +14,12 @@
     "husky": "^4.2.5",
     "lint-staged": "^10.2.11",
     "prettier": "^2.0.5",
+    "rollup": "^2.23.0",
+    "rollup-plugin-typescript2": "^0.27.1",
     "typescript": "^3.9.7"
+  },
+  "scripts": {
+    "watch": "rollup -c -w"
   },
   "husky": {
     "hooks": {
