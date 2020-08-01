@@ -1,6 +1,6 @@
 {
   "name": "@vuedx/preview",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "Component preview tool for rapid development.",
   "main": "dist/preview.js",
   "files": [
@@ -8,6 +8,7 @@
     "dist",
     "browser"
   ],
+  "bin": "bin/preview.js",
   "scripts": {},
   "keywords": [
     "vue",
@@ -18,13 +19,7 @@
   "license": "MIT",
   "devDependencies": {
     "source-map-support": "^0.5.19",
-    "tailwindcss": "^1.6.0",
     "typescript": "^3.9.7",
-    "vite": "^1.0.0-rc.4",
-    "vue": "^3.0.0-rc.5"
-  },
-  "peerDependencies": {
-    "vite": "^1.0.0-rc.4",
     "vue": "^3.0.0-rc.5"
   },
   "dependencies": {
@@ -33,6 +28,7 @@
     "debug": "^4.1.1",
     "minimist": "^1.2.5",
     "picomatch": "^2.2.2",
-    "quick-lru": "^5.1.1"
+    "quick-lru": "^5.1.1",
+    "vite": "^1.0.0-rc.4"
   }
 }

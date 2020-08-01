@@ -19,6 +19,7 @@
     "typescript": "^3.9.7"
   },
   "scripts": {
+    "build": "rollup -c --environment BUILD:production",
     "watch": "rollup -c -w"
   },
   "husky": {

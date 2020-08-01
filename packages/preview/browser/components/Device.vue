@@ -13,51 +13,48 @@ export default defineComponent({
       type: Object as () => DeviceSpecs['offset'],
       default: () => ({ top: 0, left: 0, bottom: 0, right: 0 }),
     },
-    deviceFrame: { type: String, required: true },
-    screenClipPath: { type: String },
-    features: { type: Object as () => DeviceSpecs['features'], required: true },
-    orientation: {
-      type: String as () => DeviceSpecs['features']['orientation'][0],
+    frames: {
+      type: Object as () => DeviceSpecs['frames'],
       required: true,
     },
-    style: { type: Object },
+    touch: Boolean,
+    orientation: {
+      type: String,
+      required: true,
+    },
   },
   components: { Browser },
-  inheritAttrs: false,
   setup(props, { attrs }) {
     const config = computed(() => {
-      const { orientation, width, height, offset, style } = props;
-      const transform = style?.transform || '';
+      const { orientation, width, height, offset, frames } = props;
 
-      if (orientation === 'Landscape (left)') {
+      if (orientation === 'landscape' && frames.landscape) {
         return {
           width: height,
           height: width,
-          device: {
-            ...style,
-            transform: `rotate(-90deg) ${transform}`,
-          },
-          screen: {
-            transform: `rotate(90deg)`,
+          mask: frames.landscape.mask,
+          style: {
+            backgroundImage: `url(${frames.landscape.photo})`,
+            paddingTop: offset.right + 'px',
+            paddingRight: offset.bottom + 'px',
+            paddingBottom: offset.left + 'px',
+            paddingLeft: offset.top + 'px',
           },
         };
       }
 
-      if (orientation === 'Landscape (right)') {
-        return {
-          width: height,
-          height: width,
-          device: {
-            ...style,
-            transform: `rotate(90deg) ${transform} `,
-          },
-          screen: {
-            transform: `rotate(-90deg) translateX(${width - height}px)`,
-          },
-        };
-      }
-
-      return { width: width, height: height, device: style };
+      return {
+        width: width,
+        height: height,
+        mask: frames.default.mask,
+        style: {
+          backgroundImage: `url(${frames.default.photo})`,
+          paddingTop: offset.top + 'px',
+          paddingRight: offset.right + 'px',
+          paddingBottom: offset.bottom + 'px',
+          paddingLeft: offset.left + 'px',
+        },
+      };
     });
 
     return { config };
@@ -66,37 +63,20 @@ export default defineComponent({
 </script>
 
 <template>
-  <div
-    class="device"
-    :data-name="name"
-    :style="[
-      config.device,
-      {
-        paddingTop: offset.top + 'px',
-        paddingRight: offset.right + 'px',
-        paddingBottom: offset.bottom + 'px',
-        paddingLeft: offset.left + 'px',
-        backgroundImage: `url(${deviceFrame})`,
-        width: width + 'px',
-        height: height + 'px',
-      },
-    ]"
-  >
+  <div class="device" :data-name="name" :style="config.style">
     <div
       :style="{
-        clipPath: screenClipPath ? `url(${screenClipPath}#c1)` : null,
-        width: width + 'px',
-        height: height + 'px',
+        clipPath: config.mask,
+        width: 'fit-content',
+        height: 'fit-content',
         overflow: 'hidden',
       }"
     >
-      <div :style="config.screen">
-        <Browser :device="type" :width="config.width" :height="config.height">
-          <template #default="browser">
-            <slot v-bind="browser" />
-          </template>
-        </Browser>
-      </div>
+      <Browser :device="type" :width="config.width" :height="config.height">
+        <template #default="browser">
+          <slot v-bind="browser" />
+        </template>
+      </Browser>
     </div>
   </div>
 </template>

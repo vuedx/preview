@@ -69,11 +69,11 @@ if (import.meta.hot) {
 <template>
   <div class="dashboard" :class="theme">
     <aside class="sidebar">
-      <!-- <div class="controls">
+      <div class="controls">
         <input type="range" v-model="zoom" min="10" max="200" step="10" list="zoom-levels" />
         <button @click="zoom = 50">50%</button>
         <button @click="zoom = 100">100%</button>
-      </div> -->
+      </div> 
 
       <section>
         <header class="header">Components</header>

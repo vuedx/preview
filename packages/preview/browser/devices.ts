@@ -1,14 +1,18 @@
+export interface DeviceImage {
+  photo: string;
+  mask?: string;
+}
+
 export interface DeviceSpecs {
   name: string;
   type: string;
   width: number;
   height: number;
   offset: { top: number; right: number; bottom: number; left: number };
-  deviceFrame: string;
-  screenClipPath?: string;
-  features: {
-    orientation?: Array<'Portrait' | 'Landscape (left)' | 'Landscape (right)'>;
-    touch?: boolean;
+  touch?: boolean;
+  frames: {
+    default: DeviceImage;
+    landscape?: DeviceImage;
   };
 }
 
@@ -29,11 +33,16 @@ const devices: RawDeviceSpecs[] = [
       bottom: 71,
       left: 75,
     },
-    deviceFrame: '/@preview/devices/iPhone-X.svg',
-    screenClipPath: '/@preview/devices/iPhone-X.screen.svg',
-    features: {
-      orientation: ['Portrait', 'Landscape (left)', 'Landscape (right)'],
-      touch: true,
+    touch: true,
+    frames: {
+      default: {
+        photo: '/@preview/devices/iPhone-11-Portrait.png',
+        mask: 'url(#iPhone-11-Portrait)',
+      },
+      landscape: {
+        photo: '/@preview/devices/iPhone-11-Landscape.png',
+        mask: 'url(#iPhone-11-Landscape)',
+      },
     },
   },
   {
@@ -48,11 +57,16 @@ const devices: RawDeviceSpecs[] = [
       bottom: 96,
       left: 96,
     },
-    deviceFrame: '/@preview/devices/iPad-Pro-12.9.svg',
-    screenClipPath: '/@preview/devices/iPad-Pro-12.9.screen.svg',
-    features: {
-      orientation: ['Portrait', 'Landscape (left)', 'Landscape (right)'],
-      touch: true,
+    touch: true,
+    frames: {
+      default: {
+        photo: '/@preview/devices/iPad-Pro-13-Portrait.png',
+        mask: 'inset(0 0 0 0 round 34px)',
+      },
+      landscape: {
+        photo: '/@preview/devices/iPad-Pro-13-Landscape.png',
+        mask: 'inset(0 0 0 0 round 34px)',
+      },
     },
   },
   {
@@ -67,8 +81,12 @@ const devices: RawDeviceSpecs[] = [
       bottom: 223,
       left: 419,
     },
-    deviceFrame: '/@preview/devices/MacBook-Pro-16.svg',
-    features: {},
+    touch: false,
+    frames: {
+      default: {
+        photo: '/@preview/devices/MacBook-Pro-16.png',
+      },
+    },
   },
 ];
 

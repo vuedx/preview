@@ -7,10 +7,11 @@ import {
   onMounted,
   watchEffect,
   ComponentPublicInstance,
+  watch,
 } from 'vue';
 import Device from './Device.vue';
 import devices from '../devices';
-import { THEME } from '../config';
+import { THEME, ZOOM } from '../config';
 
 export default defineComponent({
   props: {
@@ -21,9 +22,13 @@ export default defineComponent({
   components: { Device },
   setup(props) {
     const zoom = ref(50);
-    const orientation = ref('Portrait');
+    const orientation = ref('default');
     const theme = inject(THEME)!;
     const deviceInfo = computed(() => devices[props.device]);
+
+    watch(inject(ZOOM), (value) => {
+      zoom.value = value;
+    });
 
     const containerRef = ref<HTMLDivElement>(null);
     const elementRef = ref<ComponentPublicInstance>(null);
@@ -67,18 +72,13 @@ export default defineComponent({
         <button @click="zoom = 50">50%</button>
         <button @click="zoom = 100">100%</button>
         <button @click="zoom = 150">150%</button>
-      </div>
 
-      <div class="orientation" v-if="deviceInfo && deviceInfo.features.orientation">
-        <select v-model="orientation">
-          <option
-            v-for="option of deviceInfo.features.orientation"
-            :key="option"
-            :value="option"
-            style="text-transform: capitalize;"
-            >{{ option }}</option
-          >
-        </select>
+        <div class="orientation" v-if="deviceInfo && deviceInfo.frames.landscape">
+          <select v-model="orientation">
+            <option value="default">Portrait</option>
+            <option value="landscape">Landsape</option>
+          </select>
+        </div>
       </div>
     </header>
 
@@ -140,11 +140,13 @@ export default defineComponent({
 .preview .controls {
   display: flex;
   flex-direction: row;
-  gap: 0.5rem;
+  justify-content: center;
+  align-items: center;
   margin-top: 0.5rem;
+  min-width: 300px;
 }
 
-.preview .controls > button {
+.preview .controls {
   cursor: pointer;
 }
 
