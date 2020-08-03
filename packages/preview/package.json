@@ -19,6 +19,7 @@
   "license": "MIT",
   "devDependencies": {
     "source-map-support": "^0.5.19",
+    "tslib": "^2.0.0",
     "typescript": "^3.9.7",
     "vue": "^3.0.0-rc.5"
   },

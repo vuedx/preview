@@ -1,5 +1,8 @@
 {
   "private": true,
+  "scripts": {
+    "start": "node ../preview/bin/preview.js"
+  },
   "dependencies": {
     "@vue/compiler-sfc": "^3.0.0-rc.5",
     "tailwindcss": "^1.6.0",

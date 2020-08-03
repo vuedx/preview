@@ -54,6 +54,7 @@ importers:
       vite: 1.0.0-rc.4
     devDependencies:
       source-map-support: 0.5.19
+      tslib: 2.0.0
       typescript: 3.9.7
       vue: 3.0.0-rc.5
     specifiers:
@@ -64,6 +65,7 @@ importers:
       picomatch: ^2.2.2
       quick-lru: ^5.1.1
       source-map-support: ^0.5.19
+      tslib: ^2.0.0
       typescript: ^3.9.7
       vite: ^1.0.0-rc.4
       vue: ^3.0.0-rc.5
@@ -3558,6 +3560,10 @@ packages:
     dev: true
     resolution:
       integrity: sha512-i/6DQjL8Xf3be4K/E6Wgpekn5Qasl1usyw++dAA35Ue5orEn65VIxOA+YvNNl9HV3qv70T7CNwjODHZrLwvd1Q==
+  /tslib/2.0.0:
+    dev: true
+    resolution:
+      integrity: sha512-lTqkx847PI7xEDYJntxZH89L2/aXInsyF2luSafe/+0fHOMjlBNXdH6th7f70qxLDhul7KZK0zC8V5ZIyHl0/g==
   /tsscmp/1.0.6:
     dev: false
     engines:
