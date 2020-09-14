@@ -27,6 +27,11 @@ Options:
 }
 
 export async function run(argv: any) {
+  if (argv._[0] && !/^(build|serve)$/i.test(argv._[0])) {
+    argv._[1] = argv._[0]
+    argv._[0] = 'serve'
+  }
+
   const command = argv._[0];
 
   console.log(
@@ -75,6 +80,8 @@ async function resolveOptions(mode: string, argv: any) {
 
   if (argv.root) {
     argv.root = path.isAbsolute(argv.root) ? argv.root : path.resolve(argv.root);
+  } else {
+    argv.root = process.cwd();
   }
 
   const config = await resolveConfig(mode, argv.config || argv.c);
@@ -83,14 +90,15 @@ async function resolveOptions(mode: string, argv: any) {
 }
 
 function patchOptions(options: ResolvedConfig) {
+  const rootDir = options.root!; // root is always set in resolveOptions()
   const internal = {
-    setup: path.resolve(process.cwd(), 'node_modules/.preview/auto-setup.js'),
-    index: path.resolve(process.cwd(), 'node_modules/.preview/component-index.js'),
+    setup: path.resolve(rootDir, 'node_modules/.preview/auto-setup.js'),
+    index: path.resolve(rootDir, 'node_modules/.preview/component-index.js'),
   };
-  const configPath = path.resolve(process.cwd(), 'process.config.js');
+  const configPath = path.resolve(rootDir, 'process.config.js');
   const userOptions = fs.existsSync(configPath) ? require(configPath) : {};
-  const root = options.root || process.cwd();
   const { configureServer, blockProcessor } = createPreviewPlugin({
+    rootDir,
     include: ['**/*.vue'],
     exclude: ['node_modules/**/*'],
     ...userOptions,
@@ -114,15 +122,15 @@ function patchOptions(options: ResolvedConfig) {
   options.alias['/@preview/'] = path.resolve(__dirname, '../browser/');
   options.alias['@preview-component-index'] = '/node_modules/.preview/component-index.js';
   const setupFiles = [
-    path.resolve(root, 'preview.js'),
-    path.resolve(root, 'preview.ts'),
+    path.resolve(rootDir, 'preview.js'),
+    path.resolve(rootDir, 'preview.ts'),
     internal.setup,
   ];
 
   fs.mkdirSync(path.resolve(process.cwd(), 'node_modules/.preview'), { recursive: true });
   fs.writeFileSync(internal.setup, '');
   fs.writeFileSync(internal.index, 'export const components = []');
-  options.alias['@preview-auto-setup'] = '/' + path.relative(root, setupFiles.find(fs.existsSync));
+  options.alias['@preview-auto-setup'] = '/' + path.relative(rootDir, setupFiles.find(fs.existsSync));
 
   return options;
 }

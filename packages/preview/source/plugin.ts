@@ -14,6 +14,7 @@ function read(fileName: string) {
 }
 
 interface PreviewOptions {
+  rootDir: string;
   include: string[];
   exclude: string[];
   deviceAlias?: Record<string, string>;
@@ -28,14 +29,16 @@ interface PreviewConfig extends PreviewOptions {
   };
 }
 
-const store = new ComponentMetadataStore(process.cwd());
+let store: ComponentMetadataStore;
 
 export function createPreviewPlugin(options: PreviewOptions) {
+  store = store || new ComponentMetadataStore(options.rootDir);
+
   const config: PreviewConfig = {
     ...options,
     templates: {
-      autoSetup: Path.resolve(process.cwd(), 'node_modules/.preview/auto-setup.js'),
-      componentIndex: Path.resolve(process.cwd(), 'node_modules/.preview/component-index.js'),
+      autoSetup: Path.resolve(options.rootDir, 'node_modules/.preview/auto-setup.js'),
+      componentIndex: Path.resolve(options.rootDir, 'node_modules/.preview/component-index.js'),
       dashboardPage: read('../browser/index.html'),
       previewPage: read('../browser/preview.html'),
     },
@@ -48,6 +51,7 @@ export function createPreviewPlugin(options: PreviewOptions) {
 }
 
 function createServerPlugin({
+  rootDir,
   include,
   exclude,
   templates,
@@ -60,11 +64,9 @@ function createServerPlugin({
       'AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAABILAAASCwAAAAAAAAAAAAD//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////Pj//evV//vctf/73LX//evV///8+P/////////////////////////////////////////////////97tr/97xx//SjPv/2sFn/9rBY//SiO//3u2///e3a///////////////////////////////////////97tz/9a1S//ObLP/60J3/++G///vhv//5z5r/85kn//WrTf/97tv//////////////////////////////vz/+MB7//OXJP/2sVr/++G///SiOv/0oTn/++C+//avVv/zlB3/+L52///+/P////////////////////////78//jBfP/zmCX/9rFa//vhv//0ojr/9KI6//vgvv/2r1b/85Qe//i+d////vz////////////////////////////9793/9a5V//OcMP/50J3/++HA//vhwP/50Jv/85oq//WsT//97tv///////////////////////////////////////3u2//3vXX/9KZD//ayXf/2slz/9KQ///e8cf/97tr///////////////////////////////////////////////////z4//3s1v/73bf/+922//3r1v///Pj/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==',
       'base64'
     );
-    const root = config.root || process.cwd();
-    const userSetupFileTS = Path.resolve(process.cwd(), 'preview.ts');
-    const userSetupFileJS = Path.resolve(process.cwd(), 'preview.js');
+    const userSetupFileTS = Path.resolve(rootDir, 'preview.ts');
+    const userSetupFileJS = Path.resolve(rootDir, 'preview.js');
 
-    store.root = root;
     store.devices = {
       ...store.devices,
       ...deviceAlias,
@@ -80,7 +82,7 @@ function createServerPlugin({
     });
 
     watcher.on('all', async (event, fileName) => {
-      if (fileName.startsWith(root) && isValid(fileName)) {
+      if (fileName.startsWith(rootDir) && isValid(fileName)) {
         const oldContent = store.getText();
         if (event === 'unlink') {
           store.remove(fileName);
