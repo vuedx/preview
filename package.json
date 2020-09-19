@@ -20,7 +20,8 @@
   },
   "scripts": {
     "build": "rollup -c --environment BUILD:production",
-    "watch": "rollup -c -w"
+    "watch": "rollup -c -w",
+    "start": "node packages/preview/bin/preview.js packages/example"
   },
   "husky": {
     "hooks": {
