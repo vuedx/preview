@@ -10,7 +10,7 @@ export function s(value: any) {
 }
 
 export class ComponentMetadataStore {
-  private components = new Map<string, Omit<ComponentModule, 'loader'>>();
+  private components = new Map<string, Omit<ComponentModule, 'loader' | 'docgen'>>();
   private text: string;
   private cache = new QuickLRU<string, { name: string; device: string }[]>({ maxSize: 1000 });
   constructor(
@@ -22,7 +22,7 @@ export class ComponentMetadataStore {
     }
   ) {}
 
-  get(fileName: string): Readonly<Omit<ComponentModule, 'loader'>> {
+  get(fileName: string): Readonly<Omit<ComponentModule, 'loader' | 'docgen'>> {
     return this.components.get(fileName);
   }
 
@@ -90,6 +90,7 @@ export class ComponentMetadataStore {
             `  name: ${s(component.name)},`,
             `  path: ${s(component.path)},`,
             `  loader: () => import(${s('/' + component.path)}),`,
+            `  docgen: () => import(${s('/' + component.path + '.__docgen__')}),`,
             `  previews: ${s(component.previews)},`,
             `})`,
           ].join('\n')

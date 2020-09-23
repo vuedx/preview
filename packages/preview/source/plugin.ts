@@ -4,6 +4,7 @@ import * as Path from 'path';
 import * as QuickLRU from 'quick-lru';
 import picomatch from 'picomatch';
 import { ServerPlugin } from 'vite';
+import { parse } from 'vue-docgen-api';
 import { CustomBlockTransform } from 'vite/dist/node/transform';
 import { ComponentMetadataStore, resolveCompiler, s } from './store';
 
@@ -107,6 +108,16 @@ function createServerPlugin({
     });
 
     app.use(async (ctx, next) => {
+      // load docgen documentation if asked
+      // for it using .__docgen__ suffix
+      // we use a suffix here to avoid conflicting with standard .vue transform
+      if (/.__docgen__$/.test(ctx.path)) {
+        const componentPath = ctx.path.replace(/.__docgen__/, '').replace(/^\//, '');
+        const docs = await parse(Path.resolve(rootDir, componentPath));
+        ctx.body = `export default ${JSON.stringify(docs)}`;
+        ctx.type = 'js';
+      }
+
       if (/^\/?(\?.*)?$/.test(ctx.path)) {
         ctx.body = templates.dashboardPage;
         ctx.type = 'text/html';
