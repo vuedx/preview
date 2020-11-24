@@ -71,7 +71,7 @@ importers:
       vite: ^1.0.0-rc.4
       vue: ^3.0.0-rc.5
       vue-docgen-api: ^4.32.1
-lockfileVersion: 5.1
+lockfileVersion: 5.2
 packages:
   /@babel/code-frame/7.10.4:
     dependencies:
