@@ -17,6 +17,7 @@ export default defineComponent({
     const components = inject(COMPONENTS)!;
     const zoom = ref(50);
     const theme = ref<string>('light');
+    const asideOpen = ref(true);
 
     if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
       theme.value = 'dark';
@@ -53,11 +54,13 @@ export default defineComponent({
       return `id=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}`;
     }
 
-    return { options, current, currentPreview, component, zoom, getPreviewId, theme };
+    return { options, current, currentPreview, component, zoom, getPreviewId, theme, asideOpen };
   },
 });
 
+// @ts-ignore
 if (import.meta.hot) {
+  // @ts-ignore
   import.meta.hot.on('@preview', (event) => {
     if (event.type === 'pick') {
       current.value = event.id;
@@ -68,7 +71,7 @@ if (import.meta.hot) {
 
 <template>
   <div class="dashboard" :class="theme">
-    <aside class="sidebar">
+    <aside class="sidebar" v-show="asideOpen">
       <div class="controls">
         <input type="range" v-model="zoom" min="10" max="200" step="10" list="zoom-levels" />
         <button @click="zoom = 50">50%</button>
@@ -105,7 +108,7 @@ if (import.meta.hot) {
         </ul>
       </section>
 
-      <div style="flex: 1;"></div>
+      <div style="flex: 1"></div>
       <label>
         <input
           type="checkbox"
@@ -115,6 +118,9 @@ if (import.meta.hot) {
         Dark Mode
       </label>
     </aside>
+    <button @click.prevent="asideOpen = !asideOpen">
+      {{ asideOpen ? '&lt;' : '&gt;' }}
+    </button>
     <main class="previews">
       <template v-if="component">
         <template v-for="preview of component.previews">
@@ -129,9 +135,7 @@ if (import.meta.hot) {
         </template>
       </template>
 
-      <div v-else class="empty-state">
-        Select a component!
-      </div>
+      <div v-else class="empty-state">Select a component!</div>
     </main>
   </div>
 </template>
