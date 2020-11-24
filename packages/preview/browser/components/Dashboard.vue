@@ -3,6 +3,7 @@ import { inject, computed, ref, watch, markRaw, defineComponent, provide } from 
 import { COMPONENTS, ZOOM, THEME } from '../config';
 import { ComponentModule } from '../types';
 import Preview from './Preview.vue';
+import Documentation from './Documentation.vue';
 
 const current = ref<string>(localStorage.getItem('@preview:current'));
 const currentPreview = ref<Record<string, boolean>>({});
@@ -12,12 +13,13 @@ const defaultPreviews = [
   { name: 'Desktop', device: 'MacBook Pro 16"' },
 ];
 export default defineComponent({
-  components: { Preview },
+  components: { Preview, Documentation },
   setup() {
     const components = inject(COMPONENTS)!;
     const zoom = ref(50);
     const theme = ref<string>('light');
     const asideOpen = ref(true);
+    const docsAsideOpen = ref(true);
 
     if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
       theme.value = 'dark';
@@ -37,6 +39,7 @@ export default defineComponent({
             ...preview,
           })
         ),
+        docgen: component.docgen,
       }));
 
       options.sort((a, b) => a.name.localeCompare(b.name));
@@ -54,7 +57,17 @@ export default defineComponent({
       return `id=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}`;
     }
 
-    return { options, current, currentPreview, component, zoom, getPreviewId, theme, asideOpen };
+    return {
+      options,
+      current,
+      currentPreview,
+      component,
+      zoom,
+      getPreviewId,
+      theme,
+      asideOpen,
+      docsAsideOpen,
+    };
   },
 });
 
@@ -137,6 +150,14 @@ if (import.meta.hot) {
 
       <div v-else class="empty-state">Select a component!</div>
     </main>
+    <button @click.prevent="docsAsideOpen = !docsAsideOpen">
+      {{ docsAsideOpen ? '&gt;' : '&lt;' }}
+    </button>
+    <Suspense :key="component?.id || 0">
+      <template #default>
+        <Documentation v-show="docsAsideOpen" v-if="component" :docsSupplier="component.docgen" />
+      </template>
+    </Suspense>
   </div>
 </template>
 
