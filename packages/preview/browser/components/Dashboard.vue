@@ -19,7 +19,7 @@ export default defineComponent({
     const zoom = ref(50);
     const theme = ref<string>('light');
     const asideOpen = ref(true);
-    const docsAsideOpen = ref(true);
+    const docsAsideOpen = ref(false);
 
     if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
       theme.value = 'dark';
