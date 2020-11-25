@@ -18,9 +18,9 @@
 
 <script>
 import { ref } from 'vue';
-import Slots from './docs/Slots.vue';
-import Events from './docs/Events.vue';
-import Props from './docs/Props.vue';
+import Slots from './docsParts/Slots.vue';
+import Events from './docsParts/Events.vue';
+import Props from './docsParts/Props.vue';
 
 export default {
   components: { Props, Events, Slots },
