@@ -1,4 +1,5 @@
 import { Component } from 'vue';
+import { ComponentDoc } from 'vue-docgen-api';
 
 export interface ComponentModule {
   id: string;
@@ -7,6 +8,9 @@ export interface ComponentModule {
   previews: Array<Omit<ComponentPreview, 'component'>>;
   loader: () => Promise<{
     default: Component & { __previews__: ComponentPreview[] };
+  }>;
+  docgen: () => Promise<{
+    default: ComponentDoc;
   }>;
 }
 

@@ -28,8 +28,8 @@ Options:
 
 export async function run(argv: any) {
   if (argv._[0] && !/^(build|serve)$/i.test(argv._[0])) {
-    argv._[1] = argv._[0]
-    argv._[0] = 'serve'
+    argv._[1] = argv._[0];
+    argv._[0] = 'serve';
   }
 
   const command = argv._[0];
@@ -127,10 +127,11 @@ function patchOptions(options: ResolvedConfig) {
     internal.setup,
   ];
 
-  fs.mkdirSync(path.resolve(process.cwd(), 'node_modules/.preview'), { recursive: true });
+  fs.mkdirSync(path.resolve(rootDir, 'node_modules/.preview'), { recursive: true });
   fs.writeFileSync(internal.setup, '');
   fs.writeFileSync(internal.index, 'export const components = []');
-  options.alias['@preview-auto-setup'] = '/' + path.relative(rootDir, setupFiles.find(fs.existsSync));
+  options.alias['@preview-auto-setup'] =
+    '/' + path.relative(rootDir, setupFiles.find(fs.existsSync));
 
   return options;
 }

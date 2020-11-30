@@ -3,6 +3,7 @@ import { inject, computed, ref, watch, markRaw, defineComponent, provide } from 
 import { COMPONENTS, ZOOM, THEME } from '../config';
 import { ComponentModule } from '../types';
 import Preview from './Preview.vue';
+import Documentation from './Documentation.vue';
 
 const current = ref<string>(localStorage.getItem('@preview:current'));
 const currentPreview = ref<Record<string, boolean>>({});
@@ -12,11 +13,13 @@ const defaultPreviews = [
   { name: 'Desktop', device: 'MacBook Pro 16"' },
 ];
 export default defineComponent({
-  components: { Preview },
+  components: { Preview, Documentation },
   setup() {
     const components = inject(COMPONENTS)!;
     const zoom = ref(50);
     const theme = ref<string>('light');
+    const asideOpen = ref(true);
+    const docsAsideOpen = ref(false);
 
     if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
       theme.value = 'dark';
@@ -36,6 +39,7 @@ export default defineComponent({
             ...preview,
           })
         ),
+        docgen: component.docgen,
       }));
 
       options.sort((a, b) => a.name.localeCompare(b.name));
@@ -53,11 +57,23 @@ export default defineComponent({
       return `id=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}`;
     }
 
-    return { options, current, currentPreview, component, zoom, getPreviewId, theme };
+    return {
+      options,
+      current,
+      currentPreview,
+      component,
+      zoom,
+      getPreviewId,
+      theme,
+      asideOpen,
+      docsAsideOpen,
+    };
   },
 });
 
+// @ts-ignore
 if (import.meta.hot) {
+  // @ts-ignore
   import.meta.hot.on('@preview', (event) => {
     if (event.type === 'pick') {
       current.value = event.id;
@@ -68,12 +84,12 @@ if (import.meta.hot) {
 
 <template>
   <div class="dashboard" :class="theme">
-    <aside class="sidebar">
+    <aside class="sidebar" v-show="asideOpen">
       <div class="controls">
         <input type="range" v-model="zoom" min="10" max="200" step="10" list="zoom-levels" />
         <button @click="zoom = 50">50%</button>
         <button @click="zoom = 100">100%</button>
-      </div> 
+      </div>
 
       <section>
         <header class="header">Components</header>
@@ -105,7 +121,7 @@ if (import.meta.hot) {
         </ul>
       </section>
 
-      <div style="flex: 1;"></div>
+      <div style="flex: 1"></div>
       <label>
         <input
           type="checkbox"
@@ -115,6 +131,9 @@ if (import.meta.hot) {
         Dark Mode
       </label>
     </aside>
+    <button @click.prevent="asideOpen = !asideOpen">
+      {{ asideOpen ? '&lt;' : '&gt;' }}
+    </button>
     <main class="previews">
       <template v-if="component">
         <template v-for="preview of component.previews">
@@ -129,10 +148,16 @@ if (import.meta.hot) {
         </template>
       </template>
 
-      <div v-else class="empty-state">
-        Select a component!
-      </div>
+      <div v-else class="empty-state">Select a component!</div>
     </main>
+    <button @click.prevent="docsAsideOpen = !docsAsideOpen">
+      {{ docsAsideOpen ? '&gt;' : '&lt;' }}
+    </button>
+    <Suspense :key="component?.id || 0">
+      <template #default>
+        <Documentation v-show="docsAsideOpen" v-if="component" :docsSupplier="component.docgen" />
+      </template>
+    </Suspense>
   </div>
 </template>
 
