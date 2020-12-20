@@ -37,6 +37,21 @@ const config = [
     ],
     plugins: [TS()],
   },
+  {
+    input: 'extension/src/index.ts',
+    output: {
+      file: 'extension/dist/extension.js',
+      format: 'cjs',
+    },
+    external: [
+      'vscode',
+      'child_process',
+      'path',
+      'fs',
+      ...Object.keys(require('./extension/package.json').dependencies),
+    ],
+    plugins: [TS({ tsconfig: 'extension/tsconfig.json' })],
+  },
 ];
 
 export default config;

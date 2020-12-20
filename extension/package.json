@@ -1,0 +1,45 @@
+{
+  "private": true,
+  "version": "0.0.0",
+  "name": "preview",
+  "publisher": "znck",
+  "displayName": "Preview - VueDX",
+  "main": "dist/extension.js",
+  "activationEvents": [
+    "onCommand:preview.showPreview",
+    "onLanguage:vue"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "preview.showPreview",
+        "enablement": "resourceLangId == vue",
+        "title": "Show preview",
+        "category": "navigation",
+        "icon": "$(open-preview)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "when": "resourceLangId == vue",
+          "command": "preview.showPreview",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "engines": {
+    "vscode": "^1.52.0"
+  },
+  "dependencies": {
+    "@vuedx/preview": "workspace:^0.0.0",
+    "get-port": "^5.1.1",
+    "node-fetch": "^2.6.1"
+  },
+  "devDependencies": {
+    "@types/node": "^14.14.14",
+    "@types/node-fetch": "^2.5.7",
+    "@types/vscode": "^1.52.0"
+  }
+}

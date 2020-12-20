@@ -1,0 +1,16 @@
+{
+  "name": "@vuedx/preview-shell",
+  "version": "0.0.0",
+  "scripts": {
+    "start": "vite serve",
+    "build": "vite build --base '/@preview-static/dist'"
+  },
+  "dependencies": {
+    "vue": "^3.0.4",
+    "vue-router": "^4.0.1"
+  },
+  "devDependencies": {
+    "@vue/compiler-sfc": "^3.0.4",
+    "vite": "^1.0.0-rc.13"
+  }
+}

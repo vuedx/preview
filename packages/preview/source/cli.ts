@@ -97,7 +97,7 @@ function patchOptions(options: ResolvedConfig) {
   };
   const configPath = path.resolve(rootDir, 'process.config.js');
   const userOptions = fs.existsSync(configPath) ? require(configPath) : {};
-  const { configureServer, blockProcessor } = createPreviewPlugin({
+  const { indexHtmlTransforms, configureServer, blockProcessor } = createPreviewPlugin({
     rootDir,
     include: ['**/*.vue'],
     exclude: ['node_modules/**/*'],
@@ -112,6 +112,12 @@ function patchOptions(options: ResolvedConfig) {
     }
   } else {
     options.configureServer = configureServer;
+  }
+
+  if (options.indexHtmlTransforms) {
+    options.indexHtmlTransforms.push(...indexHtmlTransforms);
+  } else {
+    options.indexHtmlTransforms = indexHtmlTransforms;
   }
 
   options.vueCustomBlockTransforms = options.vueCustomBlockTransforms || {};

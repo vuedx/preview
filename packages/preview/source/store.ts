@@ -1,6 +1,21 @@
+import { ComponentInfo, createFullAnalyzer } from '@vuedx/analyze';
 import * as Path from 'path';
-import * as QuickLRU from 'quick-lru';
-import { ComponentModule } from '../browser/types';
+
+interface PreviewMetadata {
+  id: string;
+  index: number;
+  name?: string;
+  device: string;
+}
+
+interface ComponentMetadata {
+  id: string;
+  name: string;
+  path: string;
+  info: ComponentInfo;
+  previews: PreviewMetadata[];
+}
+
 export function resolveCompiler() {
   return require(require('vite/dist/node/utils/resolveVue').resolveVue(process.cwd()).compiler);
 }
@@ -10,62 +25,61 @@ export function s(value: any) {
 }
 
 export class ComponentMetadataStore {
-  private components = new Map<string, Omit<ComponentModule, 'loader' | 'docgen'>>();
   private text: string;
-  private cache = new QuickLRU<string, { name: string; device: string }[]>({ maxSize: 1000 });
-  constructor(
-    public root: string,
-    public devices = {
-      phone: 'iPhone X',
-      tablet: 'iPad Pro 12.9"',
-      desktop: 'MacBook Pro 16"',
-    }
-  ) {}
+  private components = new Map<string, Omit<ComponentMetadata, 'loader' | 'docgen'>>();
+  private analyzer = createFullAnalyzer();
 
-  get(fileName: string): Readonly<Omit<ComponentModule, 'loader' | 'docgen'>> {
-    return this.components.get(fileName);
+  constructor(public root: string) {}
+
+  get(fileName: string): Readonly<ComponentMetadata> {
+    return this.components.get(fileName) ?? this.components.get(Path.resolve(this.root, fileName));
   }
 
-  add(fileName: string, content: string) {
+  add(fileName: string, content: string): void {
     const relativeFileName = Path.relative(this.root, fileName);
+
+    this.text = '';
 
     this.components.set(fileName, {
       id: relativeFileName.replace(/\.vue$/, ''),
       name: Path.basename(fileName).replace(/\.vue$/, ''),
       path: relativeFileName,
+      info: null as any,
       previews: [],
     });
-    this.text = '';
+
     this.reload(fileName, content);
   }
 
-  remove(fileName: string) {
+  remove(fileName: string): void {
     this.text = '';
     this.components.delete(fileName);
   }
 
-  reload(fileName: string, content: string) {
+  reload(fileName: string, content: string): void {
     this.text = '';
 
     const component = this.components.get(fileName);
 
-    if (this.cache.has(content)) {
-      component.previews = this.cache.get(content);
-    } else {
-      this.cache.set(content, (component.previews = this.parse(fileName, content)));
-    }
+    component.info = this.analyzer.analyze(content, fileName);
+    component.previews = this.parse(content, fileName);
   }
 
-  private parse(fileName: string, content: string) {
+  private parse(content: string, fileName: string) {
     const { parse } = resolveCompiler();
     const { descriptor } = parse(content, { filename: fileName });
-    return descriptor.customBlocks
-      .map((block, index) => {
-        if (block.type === 'preview') {
-          const name = block.attrs.name || `Preview ${index}`;
-          const device = this.devices[block.attrs.device] || 'iPhone X';
+    const relativeFileName = Path.relative(this.root, fileName);
+    let index = 0;
 
-          return { name, device };
+    return descriptor.customBlocks
+      .map((block, i) => {
+        if (block.type === 'preview') {
+          return {
+            id: `/${relativeFileName}?type=custom&index=${i}&blockType=preview`,
+            index: index++,
+            name: block.attrs.name,
+            device: block.attrs.device ?? 'freeform',
+          };
         }
       })
       .filter(Boolean);
@@ -80,23 +94,21 @@ export class ComponentMetadataStore {
 
     components.sort((a, b) => a.name.localeCompare(b.name));
 
-    this.text = [
-      `export const components = []`,
+    this.text =
+      `export const components = [\n` +
       components
         .map((component) =>
           [
-            `components.push({ `,
-            `  id: ${s(component.id)},`,
-            `  name: ${s(component.name)},`,
-            `  path: ${s(component.path)},`,
-            `  loader: () => import(${s('/' + component.path)}),`,
-            `  docgen: () => import(${s('/' + component.path + '.__docgen__')}),`,
-            `  previews: ${s(component.previews)},`,
-            `})`,
+            `  { `,
+            `    id: ${s(component.id)},`,
+            `    name: ${s(component.name)},`,
+            `    path: ${s(component.path)},`,
+            `    previews: ${JSON.stringify(component.previews, null, 6)},`,
+            `  }`,
           ].join('\n')
         )
-        .join('\n'),
-    ].join('\n');
+        .join(',\n') +
+      `\n]`;
 
     return this.text;
   }

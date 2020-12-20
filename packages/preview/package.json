@@ -25,12 +25,14 @@
   },
   "dependencies": {
     "@vue/compiler-sfc": "^3.0.0-rc.5",
+    "@vuedx/analyze": "^0.3.1-insiders-1608294809.0",
+    "@vuedx/preview-shell": "workspace:*",
     "chalk": "^4.1.0",
     "debug": "^4.1.1",
     "minimist": "^1.2.5",
     "picomatch": "^2.2.2",
     "quick-lru": "^5.1.1",
-    "vite": "^1.0.0-rc.4",
+    "vite": "^1.0.0-rc.13",
     "vue-docgen-api": "^4.32.1"
   }
 }

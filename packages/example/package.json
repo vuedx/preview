@@ -4,8 +4,10 @@
     "start": "node ../preview/bin/preview.js"
   },
   "dependencies": {
-    "@vue/compiler-sfc": "^3.0.0-rc.5",
     "tailwindcss": "^1.6.0",
-    "vue": "^3.0.0-rc.5"
+    "vue": "^3.0.4"
+  },
+  "devDependencies": {
+    "@vue/compiler-sfc": "^3.0.4"
   }
 }
