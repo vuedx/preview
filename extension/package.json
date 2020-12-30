@@ -5,6 +5,7 @@
   "publisher": "znck",
   "displayName": "Preview - VueDX",
   "main": "dist/extension.js",
+  "icon": "https://github.com/znck/preview/blob/preview-extension/extension/logo.png",
   "activationEvents": [
     "onCommand:preview.showPreview",
     "onLanguage:vue"
@@ -33,7 +34,7 @@
     "vscode": "^1.52.0"
   },
   "dependencies": {
-    "@vuedx/preview": "workspace:^0.0.0",
+    "@vuedx/preview": "workspace:*",
     "get-port": "^5.1.1",
     "node-fetch": "^2.6.1"
   },

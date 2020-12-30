@@ -1,0 +1,9 @@
+{
+  "name": "@vuedx/preview-provider",
+  "version": "0.0.0",
+  "dependencies": {
+    "vue": "^3.0.0"
+  },
+  "main": "dist/preview-provider.cjs.js",
+  "module": "dist/preview-provider.js"
+}

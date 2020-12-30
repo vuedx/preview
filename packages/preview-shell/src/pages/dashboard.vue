@@ -72,14 +72,18 @@ export default defineComponent({
     <main class="previews">
       <template v-if="component">
         <template v-if="component.previews.length > 0">
-          <template v-for="story of component.previews" :name="story.device">
-            <Device v-if="getFilter(component.id, story.id)" :name="story.device">
-              <Content :relativeFileName="component.path" :story="story.index" />
+          <template v-for="preview of component.previews">
+            <Device
+              v-if="getFilter(component.id, preview.id)"
+              :name="preview.device"
+              v-bind="preview.deviceProps"
+            >
+              <Content :relativeFileName="component.path" :index="preview.id" />
             </Device>
           </template>
         </template>
         <Device v-else name="freeform">
-          <Content :relativeFileName="component.path" story="" />
+          <Content :relativeFileName="component.path" />
         </Device>
       </template>
       <div v-else class="empty-state">Select a component!</div>

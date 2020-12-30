@@ -8,5 +8,5 @@
     "allowSyntheticDefaultImports": true,
     "outDir": "dist"
   },
-  "include": ["source", "browser"]
+  "include": ["src"]
 }

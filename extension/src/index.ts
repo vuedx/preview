@@ -25,7 +25,11 @@ function findProjectDir(fileName: string): string {
 export async function activate(context: vscode.ExtensionContext) {
   const bin = Path.resolve(context.extensionPath, 'node_modules/@vuedx/preview/bin/preview.js');
   async function getViteInstance(bin: string, rootDir: string) {
-    if (processes.has(rootDir)) return await processes.get(rootDir);
+    if (processes.has(rootDir)) {
+      console.log('Reusing vite instance');
+
+      return await processes.get(rootDir);
+    }
 
     const result = new Promise<{
       instance: ChildProcess;
@@ -45,7 +49,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
       instance.stdout.on('data', (message) => {
         channel.append(message.toString());
-        if (/Dev server running at:/.test(message.toString())) {
+        if (/Vite dev server running at:/.test(message.toString())) {
           resolve({ port, instance, output: channel });
         }
       });
@@ -64,7 +68,7 @@ export async function activate(context: vscode.ExtensionContext) {
       if (!fileName.endsWith('.vue')) return;
 
       const rootDir = findProjectDir(fileName);
-      const { instance, port, output } = await getViteInstance(bin, rootDir);
+      const { instance, port } = await getViteInstance(bin, rootDir);
       instance.stdin.write(JSON.stringify({ command: 'open', arguments: { fileName } }) + '\n');
       const panel = vscode.window.createWebviewPanel(
         'preview',
@@ -76,7 +80,7 @@ export async function activate(context: vscode.ExtensionContext) {
         {
           retainContextWhenHidden: true,
           enableScripts: true,
-          // portMapping: [{ webviewPort: port, extensionHostPort: port }],
+          portMapping: [{ webviewPort: port, extensionHostPort: port }],
         }
       );
       panel.webview.html = getWebviewContent(

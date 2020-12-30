@@ -1,0 +1,10 @@
+{
+  "name": "@vuedx/preview-compiler",
+  "version": "0.0.0",
+  "dependencies": {
+    "@vue/compiler-dom": "^3.0.4",
+    "@vuedx/template-ast-types": "^0.4.0"
+  },
+  "main": "dist/preview-compiler.js",
+  "types": "types.d.ts"
+}

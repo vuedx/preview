@@ -4,15 +4,12 @@ import { computed, defineComponent } from 'vue';
 export default defineComponent({
   props: {
     relativeFileName: { type: String, required: true },
-    story: { type: [String, Number] },
+    index: { type: Number },
   },
 
   setup(props) {
     const src = computed(
-      () =>
-        `/@preview/component-story.html?fileName=${encodeURIComponent(
-          props.relativeFileName
-        )}&story=${encodeURIComponent(props.story ?? '')}`
+      () => `/@preview:iframe/${props.relativeFileName}?index=${props.index ?? ''}`
     );
 
     return { src };

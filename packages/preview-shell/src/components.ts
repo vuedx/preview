@@ -1,9 +1,10 @@
 import { ref } from 'vue';
 
 interface PreviewMetadata {
-  index: number;
-  name?: string;
-  device?: string;
+  id: number;
+  name: string;
+  device: string;
+  deviceProps: Record<string, string | boolean>;
 }
 
 export interface ComponentMetadata {

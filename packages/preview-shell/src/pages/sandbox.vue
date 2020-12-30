@@ -41,12 +41,16 @@ export default defineComponent({
   <div class="sandbox">
     <template v-if="currentComponent">
       <template v-if="currentComponent.previews.length > 0">
-        <Device v-for="story of currentComponent.previews" :name="story.device">
-          <Content :relativeFileName="currentComponent.path" :story="story.index" />
+        <Device
+          v-for="preview of currentComponent.previews"
+          :name="preview.device"
+          v-bind="preview.deviceProps"
+        >
+          <Content :relativeFileName="currentComponent.path" :index="preview.id" />
         </Device>
       </template>
       <Device v-else name="freeform">
-        <Content :relativeFileName="currentComponent.path" story="" />
+        <Content :relativeFileName="currentComponent.path" />
       </Device>
     </template>
     <div v-else>Select a component</div>

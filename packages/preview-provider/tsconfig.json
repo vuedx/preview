@@ -1,0 +1,6 @@
+{
+  "include": ["src"],
+  "compilerOptions": {
+    "target": "ES2019"
+  }
+}

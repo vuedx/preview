@@ -24,15 +24,18 @@
     "vue": "^3.0.0-rc.5"
   },
   "dependencies": {
-    "@vue/compiler-sfc": "^3.0.0-rc.5",
-    "@vuedx/analyze": "^0.3.1-insiders-1608294809.0",
+    "@vuedx/analyze": "^0.4.0",
+    "@vuedx/compiler-sfc": "^0.4.0",
+    "@vuedx/preview-compiler": "workspace:*",
+    "@vuedx/preview-provider": "workspace:*",
     "@vuedx/preview-shell": "workspace:*",
     "chalk": "^4.1.0",
     "debug": "^4.1.1",
+    "fast-glob": "^3.2.4",
     "minimist": "^1.2.5",
     "picomatch": "^2.2.2",
     "quick-lru": "^5.1.1",
-    "vite": "^1.0.0-rc.13",
+    "vite": "^2.0.0-alpha.2",
     "vue-docgen-api": "^4.32.1"
   }
 }
