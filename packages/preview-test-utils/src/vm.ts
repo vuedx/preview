@@ -30,7 +30,7 @@ function compileAsApp(fileName: string, previewName: string): PreviewFactoryModu
   return (
     compilations[id] ??
     (compilations[id] = vm.runInThisContext(
-      Module.wrap(generatePreviewComponent(fileName, previewName))
+      Module.wrap(generatePreviewComponent(fileName, previewName, true))
     ))
   );
 }
