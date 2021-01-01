@@ -6,24 +6,26 @@ export class DescriptorStore {
   private prevContent = new Map<string, string>();
 
   get(fileName: string, content?: string): SFCDescriptor {
-    if (!this.cache.has(fileName)) {
+    const descriptor = this.cache.get(fileName);
+    if (descriptor == null) {
       return this.set(fileName, content ?? FS.readFileSync(fileName, 'utf-8'));
     } else if (content != null) {
       return this.set(fileName, content);
     }
 
-    return this.cache.get(fileName);
+    return descriptor;
   }
 
   set(fileName: string, content: string): SFCDescriptor {
     const prevContent = this.prevContent.get(fileName);
-    if (prevContent !== content) {
+    const descriptor = this.cache.get(fileName);
+    if (prevContent !== content || descriptor == null) {
       this.prevContent.set(fileName, content);
       const { descriptor } = parse(content, { filename: fileName, sourceMap: false });
       this.cache.set(fileName, descriptor);
       return descriptor;
     } else {
-      return this.cache.get(fileName);
+      return descriptor;
     }
   }
 }

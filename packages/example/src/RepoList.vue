@@ -3,7 +3,9 @@ import { ref, defineComponent } from 'vue';
 
 export default defineComponent({
   setup() {
-    const repos = ref([]);
+    const repos = ref(
+      /** @type {Array<{ name: string }>} */ ([])
+    );
 
     fetch('https://api.github.com/users/znck/repos')
       .then((response) => response.json())
@@ -18,16 +20,18 @@ export default defineComponent({
 
 <template>
   <ul class="bg-white">
-    <li v-for="repo of repos" class="px-4 py-2">
+    <li v-for="(repo, index) of repos" class="px-4 py-2">
       {{ repo.name }}
     </li>
   </ul>
 </template>
 
-<preview>
+<preview name="one repo">
   <setup :requests="{
-    'https://api.github.com/users/znck/repos': [{name: 'preview'}]
+    'https://api.github.com/users/znck/repos': [
+      {name: 'preview'},
+    ]
   }" />
 
-  <App />
+  <RepoList />
 </preview>

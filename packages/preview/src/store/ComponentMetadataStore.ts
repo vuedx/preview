@@ -1,4 +1,5 @@
 import { ComponentInfo, createFullAnalyzer } from '@vuedx/analyze';
+import { SFCBlock } from '@vuedx/compiler-sfc';
 import * as Path from 'path';
 import { DescriptorStore } from './DescriptorStore';
 
@@ -29,7 +30,10 @@ export class ComponentMetadataStore {
   constructor(public root: string, private descriptors: DescriptorStore) {}
 
   get(fileName: string): Readonly<ComponentMetadata> {
-    return this.components.get(fileName) ?? this.components.get(Path.resolve(this.root, fileName));
+    const metadata =
+      this.components.get(fileName) ?? this.components.get(Path.resolve(this.root, fileName));
+    if (metadata == null) throw new Error('Metadata not found');
+    return metadata;
   }
 
   add(fileName: string, content: string): void {
@@ -57,16 +61,19 @@ export class ComponentMetadataStore {
     this.text = '';
 
     const component = this.components.get(fileName);
-    component.info = this.analyzer.analyze(content, fileName); // TODO: Make this lazy...
-    component.previews = this.parse(content, fileName);
+    if (component != null) {
+      component.info = this.analyzer.analyze(content, fileName); // TODO: Make this lazy...
+      component.previews = this.parse(content, fileName);
+    }
   }
 
   private parse(content: string, fileName: string): PreviewMetadata[] {
     const descriptor = this.descriptors.get(fileName, content);
+    const blocks: SFCBlock[] = descriptor.customBlocks;
     let index = 0;
 
-    return descriptor.customBlocks
-      .map((block, instanceId) => {
+    return blocks
+      .map((block, instanceId): PreviewMetadata | undefined => {
         if (block.type === 'preview') {
           index += 1;
 
@@ -80,7 +87,7 @@ export class ComponentMetadataStore {
           };
         }
       })
-      .filter(Boolean);
+      .filter((item): item is PreviewMetadata => item != null);              
   }
 
   getText(): string {

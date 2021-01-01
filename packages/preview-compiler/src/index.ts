@@ -1,23 +1,24 @@
-import { compile as baseCompile, NodeTransform } from '@vue/compiler-dom';
-import Path from 'path';
+import type { NodeTransform } from '@vue/compiler-core';
+import { compile as baseCompile } from '@vue/compiler-dom';
 import {
-  isRootNode,
-  isElementNode,
   isDirectiveNode,
+  isElementNode,
+  isRootNode,
   isSimpleExpressionNode,
 } from '@vuedx/template-ast-types';
+import Path from 'path';
 
 interface SetupOutput {
-  components?: string;
-  requests?: string;
-  state?: string;
+  components: string;
+  requests: string;
+  state: string;
 }
 
 function createPreviewSetupTransform(output: SetupOutput): NodeTransform {
   return (node, context) => {
     if (isRootNode(node)) {
       context.addIdentifiers('$p');
-    } else if (isElementNode(node) && isRootNode(context.parent) && node.tag === 'setup') {
+    } else if (isRootNode(context.parent) && isElementNode(node) && node.tag === 'setup') {
       context.removeNode();
 
       node.props.forEach((prop) => {
@@ -39,8 +40,21 @@ function createPreviewSetupTransform(output: SetupOutput): NodeTransform {
   };
 }
 
-export function compile(content: string, componentFileName: string, id?: string): string {
-  const setup: SetupOutput = {};
+export interface CompileOptions {
+  componentFileName: string;
+  allowOverrides?: boolean | string;
+  hmrId?: string;
+}
+
+export function compile(
+  content: string,
+  { componentFileName, hmrId, allowOverrides }: CompileOptions
+): string {
+  const setup: SetupOutput = {
+    components: '{}',
+    requests: '{}',
+    state: '{}',
+  };
   const result = baseCompile(content, {
     inline: true,
     mode: 'module',
@@ -51,46 +65,58 @@ export function compile(content: string, componentFileName: string, id?: string)
   });
   const componentName = Path.basename(componentFileName).replace(/\.vue$/, '');
 
-  return `
-${result.preamble}
-import { defineComponent, reactive, inject } from 'vue'
-import { provider, useRequests, useComponents } from '@vuedx/preview-provider'
-import ${componentName} from '${componentFileName}'
+  const preamble = getCode(
+    result.preamble,
+    `import { defineComponent, reactive, inject } from 'vue'`,
+    `import { provider, useRequests, useComponents, installFetchInterceptor } from '@vuedx/preview-provider'`,
+    `import ${componentName} from '${componentFileName}'`,
+    `installFetchInterceptor()`
+  );
 
-const _sfc_main = defineComponent({
+  const source = `defineComponent({
+  name: 'Preview',
   components: { ${componentName} },
   setup() {
     const $p = { 
       ...provider, 
-      state: reactive(${setup.state ?? '{}'}), 
-      x: inject('@preview:UserProviders'),
+      state: reactive(overrides.state != null ? overrides.state : ${setup.state}), 
+      x: inject('@preview:UserProviders', null),
     }
   
-    useRequests(${setup.requests ?? '{}'})
-    useComponents(${setup.components ?? '{}'})
+    useRequests({ ...(${setup.requests}), ...overrides.requests })
+    useComponents({...(${setup.components}), ...overrides.components})
   
     return (${result.code})
+  },
+})`.trim();
+
+  if (hmrId != null) {
+    return getCode(
+      preamble,
+      `const overrides = {}`,
+      `const _preview_main = ${source}`,
+      generateHMR(hmrId),
+      `export default _preview_main`
+    );
+  } else if (allowOverrides != null) {
+    const fn = typeof allowOverrides === 'string' ? allowOverrides : '';
+    return getCode(preamble, `export default (overrides = {}) => ${fn}(${source})`);
+  } else {
+    return getCode(preamble, `export default (${source})`);
   }
-})
+}
 
-${
-  id != null
-    ? `
+function generateHMR(hmrId: string) {
+  return `
 if (import.meta.hot) {
-  _sfc_main.__hmrId = '${id}'
-  __VUE_HMR_RUNTIME__.createRecord(_sfc_main.__hmrId, _sfc_main)
-  import.meta.hot.accept(({ default: updated, _rerender_only }) => {
-    // if (_rerender_only) {
-    //   __VUE_HMR_RUNTIME__.rerender(updated.__hmrId, updated.render)
-    // } else {
-      __VUE_HMR_RUNTIME__.reload(updated.__hmrId, updated)
-    // }
+  _preview_main.__hmrId = '${hmrId}'
+  __VUE_HMR_RUNTIME__.createRecord(_preview_main.__hmrId, _preview_main)
+  import.meta.hot.accept(({ default: updated }) => {
+    __VUE_HMR_RUNTIME__.reload(updated.__hmrId, updated)
   })
-}
-`
-    : ``
+}`.trim();
 }
 
-export default _sfc_main
-`.trimStart();
+function getCode(...lines: Array<string | undefined>): string {
+  return lines.filter(Boolean).join('\n');
 }

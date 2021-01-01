@@ -1,44 +1,18 @@
+import { PropInfo } from '@vuedx/analyze';
+import { SFCBlock } from '@vuedx/compiler-sfc';
+import glob from 'fast-glob';
 import FS from 'fs';
 import Path from 'path';
-import { URL } from 'url';
 import { ModuleNode, Plugin, send } from 'vite';
-import { PropInfo } from '@vuedx/analyze';
 import { ComponentMetadataStore } from './store/ComponentMetadataStore';
-import { PreviewCompilerStore } from './store/PreviewCompilerStore';
-import glob from 'fast-glob';
 import { DescriptorStore } from './store/DescriptorStore';
-import { SFCBlock, SFCDescriptor } from '@vuedx/compiler-sfc';
+import { PreviewCompilerStore } from './store/PreviewCompilerStore';
 
 interface PreviewSelector {
   fileName: string;
   index?: number;
 }
-function isEqualBlock(a: SFCBlock | null, b: SFCBlock | null) {
-  if (!a && !b) return true;
-  if (!a || !b) return false;
-  // src imports will trigger their own updates
-  if (a.src && b.src && a.src === b.src) return true;
-  if (a.content !== b.content) return false;
-  const keysA = Object.keys(a.attrs);
-  const keysB = Object.keys(b.attrs);
-  if (keysA.length !== keysB.length) {
-    return false;
-  }
-  return keysA.every((key) => a.attrs[key] === b.attrs[key]);
-}
 
-function isOnlyPreviewChanged(a: SFCDescriptor, b: SFCDescriptor): boolean {
-  return (
-    !isEqualBlock(a.template, b.template) ||
-    !isEqualBlock(a.script, b.script) ||
-    a.styles.length !== b.styles.length ||
-    !a.styles.every((style, index) => isEqualBlock(style, b.styles[index])) ||
-    !a.customBlocks.every((customBlock, index) => {
-      if (customBlock.type === 'preview') return true;
-      return isEqualBlock(customBlock, b.customBlocks[index]);
-    })
-  );
-}
 function getPreviewSelector(path: string): PreviewSelector {
   const [fileName, query] = path.split('?');
   const result: PreviewSelector = { fileName: fileName.replace(/\/@preview:.*?\//, '') };
@@ -119,27 +93,92 @@ function PreviewPlugin(): Plugin[] {
         if (source === '@vuedx/preview-provider') {
           return providerPath;
         }
+
+        if (source.startsWith('/@preview:')) return source;``
+      },
+      load(id) {
+        if (!id.startsWith('/@preview:')) return;
+        if (id.startsWith('/@preview:components')) return store.getText();
+        if (id.startsWith('/@preview:instance/')) {
+          const result = getPreviewSelector(id);
+          if (result.index == null) {
+            const { info } = store.get(result.fileName);
+            const componentName = getComponentName(result.fileName);
+            // TODO: extract as a function so it can be used in extension.
+            return compiler.compileText(
+              `
+<${componentName}${info.props
+                .map((prop) => (prop.required ? ` :${prop.name}="${getPropValue(prop)}"` : ''))
+                .join('')}>
+  <component :is="$p.stub.static('Slot: default')" />
+</${componentName}>
+          `.trim(),
+              Path.resolve(store.root, result.fileName)
+            );
+          } else {
+            return compiler.compile(Path.resolve(store.root, result.fileName), result.index);
+          }
+        }
+        if (id.startsWith('/@preview:setup')) {
+          return setupFile != null
+            ? `
+import * as setup from '/@fs/${setupFile}'
+import { createApp as vueCreateApp } from 'vue'
+
+export const createApp = setup.createApp ?? vueCreateApp
+export const x = setup.x ?? {}
+`.trimStart()
+            : `
+import { createApp } from 'vue'
+
+export { createApp }
+export const x = {}
+`.trimStart();
+        }
+        if (id.startsWith('/@preview:app')) {
+          const result = getPreviewSelector(id);
+
+          return `
+import { createApp, x } from '/@preview:setup'
+import { installFetchInterceptor } from '@vuedx/preview-provider'
+import App from '/@preview:instance/${result.fileName}?index=${result.index ?? ''}'
+
+installFetchInterceptor()
+
+const app = createApp(App)
+app.provide('@preview:UserProviders', x)
+app.mount('#app')
+`.trimStart();
+        }
       },
     },
     {
       name: 'preview:post',
       enforce: 'post',
-      async handleHotUpdate(file, mods, read, server) {
+      async handleHotUpdate(file, mods, read, server): Promise<ModuleNode[] | void> {
         if (file.endsWith('.vue')) {
-          const affectedModules = new Set<ModuleNode | undefined>(
-            mods.filter((mod) => !/\?vue&type=preview/.test(mod.id))
+          const affectedModules = new Set<ModuleNode>(
+            mods.filter((mod) => mod.id == null || !/\?vue&type=preview/.test(mod.id))
           );
 
           const content = await read();
           const prevDescriptor = descriptors.get(file);
-          const prevPreviews = prevDescriptor.customBlocks
-            .map((block, index) => ({ index, block }))
-            .filter((a) => a.block.type === 'preview');
+          interface PreviewBlockWithIndex {
+            block: SFCBlock;
+            index: number;
+          }
+
+          const prevPreviews: Array<PreviewBlockWithIndex> = prevDescriptor.customBlocks
+            .map((block: SFCBlock, index: number): PreviewBlockWithIndex => ({ index, block }))
+            .filter(({ block }: PreviewBlockWithIndex) => block.type === 'preview');
 
           const nextDescriptor = descriptors.set(file, content);
-          const nextPreviews = nextDescriptor.customBlocks
-            .map((block, index) => ({ index, block }))
-            .filter((a) => a.block.type === 'preview');
+          const nextPreviews: Array<{
+            block: SFCBlock;
+            index: number;
+          }> = nextDescriptor.customBlocks
+            .map((block: SFCBlock, index: number): PreviewBlockWithIndex => ({ index, block }))
+            .filter(({ block }: PreviewBlockWithIndex) => block.type === 'preview');
 
           const id = `/@preview:instance/${Path.relative(server.config.root, file)}?index=`;
           nextPreviews.forEach((a, index) => {
@@ -163,7 +202,8 @@ function PreviewPlugin(): Plugin[] {
           store.reload(file, content);
           const nextContent = store.getText();
           if (prevContent !== nextContent) {
-            affectedModules.add(server.moduleGraph.getModuleById('/@preview:components'));
+            const indexModule = server.moduleGraph.getModuleById('/@preview:components');
+            if (indexModule != null) affectedModules.add(indexModule);
           }
 
           return Array.from(affectedModules);
@@ -226,7 +266,7 @@ function PreviewPlugin(): Plugin[] {
 
         server.app.use(async function ServePreviewShell(req, res, next) {
           if (req.method === 'GET') {
-            const url = (req.url ?? '/').split('?').shift();
+            const url = (req.url ?? '/').split('?').shift() ?? '/';
             if (
               url.startsWith('/@preview:shell/') ||
               ['/favicon.ico'].includes(url) ||
@@ -282,62 +322,6 @@ function PreviewPlugin(): Plugin[] {
 
           return next();
         });
-      },
-
-      load(id) {
-        if (!id.startsWith('/@preview:')) return;
-        if (id.startsWith('/@preview:components')) return store.getText();
-        if (id.startsWith('/@preview:instance/')) {
-          const result = getPreviewSelector(id);
-          if (result.index == null) {
-            const { info } = store.get(result.fileName);
-            const componentName = getComponentName(result.fileName);
-            // TODO: extract as a function so it can be used in extension.
-            return compiler.compileText(
-              `
-<${componentName}${info.props
-                .map((prop) => (prop.required ? ` :${prop.name}="${getPropValue(prop)}"` : ''))
-                .join('')}>
-  <component :is="$p.stub.static('Slot: default')" />
-</${componentName}>
-          `.trim(),
-              Path.resolve(store.root, result.fileName)
-            );
-          } else {
-            return compiler.compile(Path.resolve(store.root, result.fileName), result.index);
-          }
-        }
-        if (id.startsWith('/@preview:setup')) {
-          return setupFile != null
-            ? `
-import * as setup from '/@fs/${setupFile}'
-import { createApp as vueCreateApp } from 'vue'
-
-export const createApp = setup.createApp ?? vueCreateApp
-export const x = setup.x ?? {}
-`.trimStart()
-            : `
-import { createApp } from 'vue'
-
-export { createApp }
-export const x = {}
-`.trimStart();
-        }
-        if (id.startsWith('/@preview:app')) {
-          const result = getPreviewSelector(id);
-
-          return `
-import { createApp, x } from '/@preview:setup'
-import { installFetchInterceptor } from '@vuedx/preview-provider'
-import App from '/@preview:instance/${result.fileName}?index=${result.index ?? ''}'
-
-installFetchInterceptor()
-
-const app = createApp(App)
-app.provide('@preview:UserProviders', x)
-app.mount('#app')
-`.trimStart();
-        }
       },
     },
   ];

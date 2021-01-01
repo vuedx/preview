@@ -6,7 +6,6 @@ import createDebugLogger from 'debug';
 import { PreviewPlugin } from './plugin';
 
 const debug = createDebugLogger('preview:cli');
-debug.server = createDebugLogger('preview:server');
 
 function logHelp() {
   console.log(`

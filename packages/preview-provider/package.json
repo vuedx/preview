@@ -2,8 +2,12 @@
   "name": "@vuedx/preview-provider",
   "version": "0.0.0",
   "dependencies": {
-    "vue": "^3.0.0"
+    "@vue/runtime-core": "^3.0.5"
   },
-  "main": "dist/preview-provider.cjs.js",
-  "module": "dist/preview-provider.js"
+  "main": "dist/preview-provider.js",
+  "module": "dist/preview-provider.esm.js",
+  "types": "dist/preview-provider.d.ts",
+  "devDependencies": {
+    "typescript": "^4.1.3"
+  }
 }

@@ -1,7 +1,5 @@
 {
   "extends": "../../tsconfig.base.json",
   "include": ["src"],
-  "compilerOptions": {
-    "lib": ["ES2019", "DOM"]
-  }
+  "compilerOptions": { "lib": ["ES2019", "DOM"], "checkJs": true }
 }

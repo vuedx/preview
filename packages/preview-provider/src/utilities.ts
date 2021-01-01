@@ -1,4 +1,4 @@
-import { Component, defineComponent, ref, h } from 'vue';
+import { Component, defineComponent, h } from '@vue/runtime-core';
 
 export function repeat<T>(count: number, generator: (index: number) => T): T[] {
   const items: T[] = [];
@@ -53,7 +53,10 @@ export const number = createFunctionObject(() => number.any(), {
 });
 
 export const bool = createFunctionObject(() => Math.random() <= 0.5, {});
-export const on = createFunctionObject((name: string) => (event) => console.log(event), {});
+export const on = createFunctionObject(
+  (name: string) => (event: any) => console.log(name, event),
+  {}
+);
 
 export function defineStubComponent(name: string, component: Component): Component {
   return defineComponent({
@@ -98,10 +101,10 @@ export const component = createFunctionObject(() => defineComponent(() => () => 
   }),
 });
 
-const STATUS_TEXTS = {
+const STATUS_TEXTS: Record<number, string> = {
   200: 'Ok',
   404: 'Not found',
-} as const;
+};
 
 export const http = createFunctionObject(
   (body: BodyInit = '{}', status: number = 200) => http.send(body, status),

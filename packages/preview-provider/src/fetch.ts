@@ -1,5 +1,5 @@
 import { notify } from './communication';
-import { onUnmounted } from 'vue';
+import { getCurrentInstance, onUnmounted } from '@vue/runtime-core';
 interface RequestHandler {
   (
     params: Record<string, string>,
@@ -11,29 +11,38 @@ interface RequestHandler {
 
 export type RequestOptions = Record<string, RequestHandler | Record<string, any>>;
 
-const interceptors: Array<Array<{ method: string; url: string; handler: RequestHandler }>> = [];
+interface InterceptorRecord {
+  method: string;
+  url: string;
+  handler: RequestHandler;
+}
 
+const state: { interceptors: Array<InterceptorRecord>; warned: Set<string> } = {
+  interceptors: [],
+  warned: new Set(),
+};
 const REQUEST_RE = /^(GET|POST|PUT|DELETE|HEAD)?\s?(.+)$/;
 
 /**
  * @param options register request handlers/interceptors.
  */
 export function useRequests(options: RequestOptions): void {
-  const requests = Object.entries(options).map(([key, value]) => {
-    const result = REQUEST_RE.exec(key) ?? [, , key];
-    return {
-      method: result[1] ?? 'GET',
-      url: result[2],
-      handler: (typeof value === 'function' ? value : () => value) as any,
-    };
-  });
+  state.interceptors = Object.entries(options).map(
+    ([key, value]): InterceptorRecord => {
+      const result = REQUEST_RE.exec(key);
+      return {
+        method: result?.[1] ?? 'GET',
+        url: result?.[2] ?? key,
+        handler: (typeof value === 'function' ? value : () => value) as any,
+      };
+    }
+  );
 
-  interceptors.push(requests);
-
-  onUnmounted(() => {
-    const index = interceptors.indexOf(requests);
-    if (index >= 0) interceptors.splice(index, 1);
-  });
+  if (getCurrentInstance() != null) {
+    onUnmounted(() => {
+      state.interceptors = [];
+    });
+  }
 }
 
 /**
@@ -45,7 +54,7 @@ export function installFetchInterceptor(): void {
   window.fetch = async function (input: RequestInfo, init?: RequestInit): Promise<Response> {
     const url = typeof input === 'string' ? input : input.url;
     const method = init?.method ?? (typeof input === 'string' ? 'GET' : input.method);
-    const interceptor = interceptors
+    const interceptor = state.interceptors
       .flat()
       .find((interceptor) => interceptor.method === method && interceptor.url === url);
 
@@ -55,7 +64,13 @@ export function installFetchInterceptor(): void {
       return new Response(JSON.stringify(result));
     }
 
-    notify('missing-request-handler', { method, url });
+    console.log(input, init);
+
+    const id = `${method} ${url}`;
+    if (!state.warned.has(id)) {
+      state.warned.add(id);
+      notify('missing-request-handler', { method, url });
+    }
 
     return fetch(input, init);
   };

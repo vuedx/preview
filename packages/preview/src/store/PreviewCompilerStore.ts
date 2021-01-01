@@ -12,12 +12,9 @@ export class PreviewCompilerStore {
   }
 
   compileText(content: string, fileName: string, id: string = fileName + ':auto'): string {
-    try {
-      return compile(content, fileName, id);
-    } catch (error) {
-      console.log(content);
-
-      throw error;
-    }
+    return compile(content, {
+      componentFileName: fileName,
+      hmrId: id,
+    });
   }
 }

@@ -23,13 +23,13 @@ socket.addEventListener('message', async ({ data }) => {
   }
 });
 async function handleMessage(payload) {
-  const { path, changeSrcPath, timestamp } = payload;
+  const { path, accpetedPath, timestamp } = payload;
   switch (payload.type) {
     case 'connected':
       console.log(`[preview/vite] connected.`);
       break;
     case 'js-update':
-      queueUpdate(updateModule(path, changeSrcPath, timestamp));
+      queueUpdate(updateModule(path, accpetedPath, timestamp));
       break;
 
     case 'custom':
