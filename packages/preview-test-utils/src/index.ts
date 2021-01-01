@@ -160,7 +160,7 @@ function getFileName(fileName?: string, depth: number = 2): string {
   const baseName =
     Path.basename(trace.fileName).replace(/(?:\.(?:spec|test))?\.(?:js|ts)x?$/, '') + '.vue';
 
-  const testDir = Path.sep + '__test__' + Path.sep;
+  const testDir = Path.sep + '__tests__' + Path.sep;
   if (dirName.includes(testDir)) {
     return Path.resolve(dirName.replace(testDir, Path.sep), baseName);
   }
