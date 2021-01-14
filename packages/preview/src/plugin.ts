@@ -94,11 +94,22 @@ function PreviewPlugin(): Plugin[] {
           return providerPath;
         }
 
-        if (source.startsWith('/@preview:')) return source;``
+        if (source.startsWith('/@preview:analyze/')) return source;
+        // TODO: Implement docgen
+        // if (source.startsWith('/@preview:docgen/')) return source;
+        if (source.startsWith('/@preview:')) return source;
       },
+
       load(id) {
         if (!id.startsWith('/@preview:')) return;
         if (id.startsWith('/@preview:components')) return store.getText();
+        if (id.startsWith('/@preview:analyze/')) {
+          const fileName = id.substr('/@preview:analyze/'.length)
+          // TODO: Maybe file should be loaded
+          return `export default ${JSON.stringify(store.get(fileName), null, 2)}`
+        }
+        // TODO: Implement docgen loading
+
         if (id.startsWith('/@preview:instance/')) {
           const result = getPreviewSelector(id);
           if (result.index == null) {
@@ -108,8 +119,8 @@ function PreviewPlugin(): Plugin[] {
             return compiler.compileText(
               `
 <${componentName}${info.props
-                .map((prop) => (prop.required ? ` :${prop.name}="${getPropValue(prop)}"` : ''))
-                .join('')}>
+                  .map((prop) => (prop.required ? ` :${prop.name}="${getPropValue(prop)}"` : ''))
+                  .join('')}>
   <component :is="$p.stub.static('Slot: default')" />
 </${componentName}>
           `.trim(),
@@ -285,7 +296,7 @@ app.mount('#app')
                 ).replace(
                   '</body>',
                   `<script type="module" src="/@preview:hmr"></script>` +
-                    `<script type="module" src="/@preview:components"></script></body>`
+                  `<script type="module" src="/@preview:components"></script></body>`
                 );
                 return send(req, res, html, 'html');
               }

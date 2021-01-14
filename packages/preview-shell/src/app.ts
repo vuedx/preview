@@ -1,4 +1,3 @@
-import './reset.css'
 import './app.css'
 import { createApp } from 'vue';
 import Root from './Root.vue';

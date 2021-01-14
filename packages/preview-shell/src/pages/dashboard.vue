@@ -17,8 +17,8 @@ export default defineComponent({
   },
 
   setup(props) {
-    const current = ref<string>(props.fileName);
-    const filters = reactive({});
+    const current = ref<string>(props.fileName ?? '');
+    const filters = reactive<Record<string, Record<string, boolean>>>({});
     const component = computed(() => {
       const id = current.value;
       return id != null ? components.value.find((component) => component.id === id) : undefined;
@@ -37,7 +37,7 @@ export default defineComponent({
     function toggleFilter(componentId: string, previewId: number) {
       filters[componentId] = {
         ...filters[componentId],
-        previewId: !getFilter(componentId, previewId),
+        [previewId]: !getFilter(componentId, previewId),
       };
     }
 
@@ -51,144 +51,58 @@ export default defineComponent({
 </script>
 
 <template>
-  <div class="dashboard">
-    <aside class="sidebar">
+  <div class="flex flex-row flex-wrap">
+    <aside
+      class="fixed bg-white p-4 top-0 bottom-0 right-0 w-64 transform transition-transform duration-500 ease-in-out hover:translate-x-0 focus:translate-x-0 focus-within:translate-x-0 shadow-md"
+      :class="component ? 'translate-x-60' : 'translate-x-0'"
+    >
       <ExplorerComponents v-model:active="current" #default="{ component }">
-        <ul :key="component.id">
-          <li v-for="preview of component.previews" :key="preview.id">
+        <ul :key="component.id" class="-mt-2 pb-2">
+          <li v-for="preview of component.previews" :key="preview.id" class="mx-4">
             <label>
               <input
                 type="checkbox"
-                @change="toggleFilter(component.id, preview.index)"
-                :checked="getFilter(component.id, preview.index)"
-                :value="preview.index"
+                @change="toggleFilter(component.id, preview.id)"
+                :checked="getFilter(component.id, preview.id)"
+                :value="preview.id"
               />
-              {{ preview.name ?? `Preview ${preview.index}` }}
+              {{ preview.name }}
             </label>
           </li>
         </ul>
       </ExplorerComponents>
     </aside>
-    <main class="previews">
+    <main class="w-full min-h-screen bg-gray-50 flex flex-row flex-wrap">
       <template v-if="component">
-        <template v-if="component.previews.length > 0">
-          <template v-for="preview of component.previews">
-            <Device
-              v-if="getFilter(component.id, preview.id)"
-              :name="preview.device"
-              v-bind="preview.deviceProps"
-            >
-              <Content :relativeFileName="component.path" :index="preview.id" />
-            </Device>
+        <div class="pl-4 flex flow-row flex-wrap">
+          <template v-if="component.previews.length > 0">
+            <template v-for="preview of component.previews">
+              <div v-if="getFilter(component.id, preview.id)" class="m-4">
+                <Device :name="preview.device" v-bind="preview.deviceProps">
+                  <Content :relativeFileName="component.path" :index="preview.id" />
+                </Device>
+              </div>
+            </template>
           </template>
-        </template>
-        <Device v-else name="freeform">
-          <Content :relativeFileName="component.path" />
-        </Device>
+          <div v-else class="m-4">
+            <Device name="freeform">
+              <Content :relativeFileName="component.path" />
+            </Device>
+          </div>
+        </div>
       </template>
-      <div v-else class="empty-state">Select a component!</div>
+      <div
+        v-else
+        class="grid place-content-center place-items-center w-screen h-screen text-3xl uppercase text-gray-500 bg-gray-900"
+      >
+        Select a component!
+      </div>
     </main>
   </div>
 </template>
 
 <style>
-.dashboard {
-  display: flex;
-  flex-direction: row;
-  height: 100vh;
-}
-
-.sidebar {
-  width: 250px;
-  padding: 1rem;
-  overflow: auto;
-  display: flex;
-  flex-direction: column;
-}
-
-.dark .sidebar {
-  background-color: #222;
-  color: #efefef;
-}
-
-.dashboard > main {
-  flex: 1;
-  overflow: auto;
-}
-
-.header {
-  font-size: 1rem;
-  font-weight: bolder;
-  text-transform: uppercase;
-}
-
-.controls {
-  margin-bottom: 1rem;
-  display: flex;
-  flex-direction: row;
-  gap: 0.5rem;
-}
-
-.controls * {
-  cursor: pointer;
-}
-
-.components li {
-  padding: 0.25rem 0.5rem;
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
-  border-radius: 4px;
-}
-
-.components li li {
-  margin-left: 1rem;
-  margin-top: 0.25rem;
-  margin-bottom: 0.25rem;
-}
-
-.components > li > label {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-}
-
-label,
-input[type='range'] {
-  cursor: pointer;
-}
-
-.previews {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  background-color: #ccc;
-  min-height: 100vh;
-  box-sizing: border-box;
-  gap: 1rem;
-  padding: 1rem;
-  padding-bottom: 4rem;
-}
-
-.dark .previews {
-  background-color: #444;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
-  padding: 0 2rem 2rem;
-  height: 100vh;
-  flex: 1;
-  background-color: #ccc;
-  font-size: 2rem;
-  letter-spacing: 0.2ch;
-  text-transform: uppercase;
-}
-
-.dark .empty-state {
-  background-color: #333;
-  color: #ccc;
+.focus-within\:translate-x-0:focus-within {
+  --tw-translate-x: 0;
 }
 </style>

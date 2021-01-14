@@ -8,7 +8,7 @@ export default defineComponent({
   },
 
   emits: {
-    'update:active': (value: string) => true,
+    'update:active': (value?: string) => true,
   },
 
   setup(props, { emit }) {
@@ -24,12 +24,23 @@ export default defineComponent({
 
 <template>
   <section>
-    <header class="bg-red-500">Components</header>
-    <ul>
-      <li v-for="component of components" :key="component.id">
-        <label>
-          <input type="radio" v-model="current" :value="component.id" />
+    <header class="font-bold uppercase text-xs text-gray-600 mb-2">Components</header>
+    <ul class="-mx-4">
+      <li
+        v-for="component of components"
+        :key="component.id"
+        :class="{ 'shadow-inner bg-gray-200': component.id === current }"
+      >
+        <label
+          class="py-2 px-4 block transition duration-500 ease-in-out cursor-pointer hover:bg-gray-200 focus:bg-gray-200 focus-within:bg-gray-200"
+          :title="component.path"
+        >
+          <input type="radio" v-model="current" :value="component.id" class="sr-only" />
           {{ component.name }}
+          <span
+            class="block overflow-ellipsis overflow-x-hidden italic whitespace-nowrap -mt-1 text-gray-400 text-xs"
+            >{{ component.path }}</span
+          >
         </label>
 
         <slot v-if="component.id === current" :component="component" />
