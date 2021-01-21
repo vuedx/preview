@@ -1,0 +1,193 @@
+name: CI/CD
+
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: Publish
+        default: 'no'
+  pull_request:
+  release:
+    types:
+      - released
+  push:
+    paths-ignore:
+      - 'docs/**'
+      - 'samples/**'
+      - '.github/**'
+      - '!.github/workflows/ci.yaml'
+    branches:
+      - main
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Node
+        uses: actions/setup-node@v2-beta
+        with:
+          node-version: '14'
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v1.2.1
+        with:
+          version: 5.5.4
+          run_install: |
+            - args: [--frozen-lockfile, --silent]
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: dist
+          path: |
+            ./packages/*/dist
+            ./extension/dist
+          retention-days: 1
+
+  test:
+    name: Test Suite
+    needs: build
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: ['12', '14']
+        include:
+          - os: ubuntu-latest
+            node: '14'
+            command: 'coverage'
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Node
+        uses: actions/setup-node@v2-beta
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v1.2.1
+        with:
+          version: 5.5.4
+          run_install: |
+            - args: [--frozen-lockfile, --silent]
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: dist
+
+      - name: Test
+        run: pnpm recursive run test -- --coverage
+
+      - name: Collect coverage
+        if: matrix.command == 'coverage'
+        uses: codecov/codecov-action@v1
+        with:
+          file: ./coverage/coverage-final.json
+
+  insiders:
+    name: Insiders Release
+    runs-on: ubuntu-latest
+    environment: Insiders
+    needs: test
+    if: |
+      github.ref == 'refs/heads/main'
+    steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.4.1
+        with:
+          access_token: ${{ github.token }}
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Node
+        uses: actions/setup-node@v2-beta
+        with:
+          node-version: '14.14.0'
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v1.2.1
+        with:
+          version: 5.5.4
+          run_install: |
+            - args: [--frozen-lockfile, --silent]
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: dist
+      
+      - name: Publish Insiders Extension
+        run: |
+          pnpm recursive --filter ./extensions run release
+        env:
+          RELEASE_CHANNEL: insiders
+          VSCODE_MARKETPLACE_TOKEN: ${{ secrets.VSCODE_MARKETPLACE_TOKEN }}
+
+      - name: Publish Insiders Packages
+        run: |
+          echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' >> .npmrc
+          pnpm recursive exec -- npm version prerelease --preid=insiders-$(date +%s)
+          pnpm recursive publish --tag insiders --access public --no-git-checks
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    environment: Production
+    needs: test
+    if: |
+      (
+        github.event_name == 'release' &&
+        github.event.action == 'released'
+      ) || (
+        github.event.inputs.release == 'yes'
+      )
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Node
+        uses: actions/setup-node@v2-beta
+        with:
+          node-version: '14.14.0'
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v1.2.1
+        with:
+          version: 5.5.4
+          run_install: |
+            - args: [--frozen-lockfile, --silent]
+      
+      - name: Download build artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: dist
+
+      - name: Publish Extension
+        run: |
+          pnpm recursive --filter ./extensions run release
+        env:
+          VSCODE_MARKETPLACE_TOKEN: ${{ secrets.VSCODE_MARKETPLACE_TOKEN }}
+
+      - name: Publish Packages
+        run: |
+          echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' >> .npmrc
+          pnpm recursive publish --tag latest --access public --no-git-checks
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

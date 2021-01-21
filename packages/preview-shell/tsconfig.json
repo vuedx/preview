@@ -1,0 +1,5 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "include": ["src", "node_modules/vite/dist/importMeta.d.ts"],
+  "compilerOptions": { "lib": ["ES2019", "DOM"] }
+}

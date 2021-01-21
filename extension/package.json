@@ -1,0 +1,64 @@
+{
+  "private": true,
+  "version": "0.0.0",
+  "name": "preview",
+  "publisher": "znck",
+  "displayName": "Preview - VueDX",
+  "main": "dist/extension.js",
+  "icon": "logo.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/znck/preview.git",
+    "directory": "extension"
+  },
+  "activationEvents": [
+    "onCommand:preview.show",
+    "onCommand:preview.stop",
+    "onLanguage:vue"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "preview.show",
+        "enablement": "resourceLangId == vue",
+        "title": "Show preview",
+        "category": "Preview",
+        "icon": "$(open-preview)"
+      },
+      {
+        "command": "preview.stop",
+        "enablement": "preview:isViteStarted",
+        "title": "Stop preview server",
+        "category": "Preview"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "when": "resourceLangId == vue",
+          "command": "preview.show",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "engines": {
+    "vscode": "^1.52.0"
+  },
+  "devDependencies": {
+    "@vuedx/preview": "workspace:*",
+    "get-port": "^5.1.1",
+    "node-fetch": "^2.6.1",
+    "@types/node": "^14.14.17",
+    "@types/node-fetch": "^2.5.7",
+    "@types/vscode": "^1.52.0",
+    "vsce": "^1.84.0"
+  },
+  "scripts": {
+    "prerelease": "npm run bundle",
+    "release": "vsce publish -p ${VSCODE_MARKETPLACE_TOKEN} --packagePath ./preview.vsix",
+    "prebundle": "node scripts/prepare",
+    "bundle": "vsce package --out preview.vsix",
+    "postbundle": "node scripts/revert"
+  }
+}
