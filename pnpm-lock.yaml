@@ -94,7 +94,7 @@ importers:
       '@vitejs/plugin-vue': ^1.0.2
       '@vue/compiler-sfc': ^3.0.5
       '@vue/test-utils': ^2.0.0-beta.13
-      '@vuedx/preview-test-utils': 'workspace:^0.0.0'
+      '@vuedx/preview-test-utils': 'workspace:*'
       babel-jest: ^26.6.3
       jest: ^26.6.3
       tailwindcss: ~1
