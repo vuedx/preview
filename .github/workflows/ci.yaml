@@ -60,7 +60,7 @@ jobs:
     needs: build
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
         node: ['12', '14']
         include:
           - os: ubuntu-latest
@@ -140,7 +140,7 @@ jobs:
 
       - name: Publish Insiders Packages
         run: |
-          echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' >> .npmrc
+          echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' > .npmrc
           pnpm recursive --filter ./packages exec -- npm version prerelease --preid=insiders-$(date +%s)
           pnpm recursive --filter ./packages publish --tag insiders --access public --no-git-checks
         env:
@@ -192,7 +192,7 @@ jobs:
 
       - name: Publish Packages
         run: |
-          echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' >> .npmrc
+          echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' > .npmrc
           pnpm recursive publish --tag latest --access public --no-git-checks
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
