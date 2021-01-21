@@ -1,6 +1,6 @@
-# Vue
+# Preview
 
-This extension provides language grammar and syntax highlight for `.vue` files.
+This extension provides quick preview for `.vue` files.
 
 ## Support
 
