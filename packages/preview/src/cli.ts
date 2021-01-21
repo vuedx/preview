@@ -88,19 +88,17 @@ interface ServeArgs {
 }
 
 async function runServe(options: ServeArgs) {
-  const server = await createServer(
-    {
-      root: options.root,
-      mode: options.mode,
-      logLevel: 'info',
-      server: {
-        port: options.port,
-        open: options.open,
-      },
-      plugins: PreviewPlugin(),
+  const server = await createServer({
+    root: options.root,
+    mode: options.mode,
+    logLevel: 'info',
+    server: {
+      port: options.port,
+      open: options.open,
     },
-    options.config
-  );
+    plugins: PreviewPlugin(),
+    configFile: options.config,
+  });
 
   await server.listen(options.port);
 }
