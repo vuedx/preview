@@ -104,9 +104,9 @@ function PreviewPlugin(): Plugin[] {
         if (!id.startsWith('/@preview:')) return;
         if (id.startsWith('/@preview:components')) return store.getText();
         if (id.startsWith('/@preview:analyze/')) {
-          const fileName = id.substr('/@preview:analyze/'.length)
+          const fileName = id.substr('/@preview:analyze/'.length);
           // TODO: Maybe file should be loaded
-          return `export default ${JSON.stringify(store.get(fileName), null, 2)}`
+          return `export default ${JSON.stringify(store.get(fileName), null, 2)}`;
         }
         // TODO: Implement docgen loading
 
@@ -119,8 +119,8 @@ function PreviewPlugin(): Plugin[] {
             return compiler.compileText(
               `
 <${componentName}${info.props
-                  .map((prop) => (prop.required ? ` :${prop.name}="${getPropValue(prop)}"` : ''))
-                  .join('')}>
+                .map((prop) => (prop.required ? ` :${prop.name}="${getPropValue(prop)}"` : ''))
+                .join('')}>
   <component :is="$p.stub.static('Slot: default')" />
 </${componentName}>
           `.trim(),
@@ -296,7 +296,9 @@ app.mount('#app')
                 ).replace(
                   '</body>',
                   `<script type="module" src="/@preview:hmr"></script>` +
-                  `<script type="module" src="/@preview:components"></script></body>`
+                    `<script type="module" src="/@preview:components"></script>` +
+                    genVSCodeKeyboardEventSupport() +
+                    `</body>`
                 );
                 return send(req, res, html, 'html');
               }
@@ -325,7 +327,9 @@ app.mount('#app')
 <body>
   <div id="app"></div>
   <script type="module" src="/@preview:app/${result.fileName}?index=${result.index ?? ''}"></script>
+  ${genVSCodeKeyboardEventSupport()}
 </body>
+</html>
           `.trimStart(),
               'html'
             );
@@ -339,6 +343,7 @@ app.mount('#app')
 }
 
 export { PreviewPlugin };
+
 function getPreviewShellPath() {
   const pkgPath = require.resolve('@vuedx/preview-shell/package.json');
   return Path.resolve(Path.dirname(pkgPath), 'dist');
@@ -349,4 +354,37 @@ function getProviderPath(): string {
   const pkg = require(pkgPath);
 
   return Path.resolve(Path.dirname(pkgPath), pkg.module);
+}
+
+function genVSCodeKeyboardEventSupport(): string {
+  return `<script>
+  const events = ['keydown', 'keyup'];
+  if (window.parent !== window.top) {
+    events.forEach(event => {
+      document.addEventListener(event, event => {
+        window.parent.postMessage({
+          kind: 'event',
+          payload: {
+            type: event.type,
+            init: {
+              altKey: event.altKey,
+              code: event.code,
+              ctrlKey: event.ctrlKey,
+              isComposing: event.isComposing,
+              key: event.key,
+              location: event.location,
+              metaKey: event.metaKey,
+              repeat: event.repeat,
+              shiftKey: event.shiftKey
+            }
+          }
+        }, '*')
+      })
+    })
+    window.addEventListener('message', event => {
+      if (event.source === window) return
+      window.postMessage(event.data, '*')
+    }, false)
+  }
+</script>`;
 }

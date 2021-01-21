@@ -21,13 +21,14 @@
       {
         "command": "preview.show",
         "enablement": "resourceLangId == vue",
-        "title": "Show",
+        "title": "Show preview",
         "category": "Preview",
         "icon": "$(open-preview)"
       },
       {
         "command": "preview.stop",
-        "title": "Stop",
+        "enablement": "preview:isViteStarted",
+        "title": "Stop preview server",
         "category": "Preview"
       }
     ],

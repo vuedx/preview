@@ -30,7 +30,7 @@ function findProjectDir(fileName: string): string {
 
 export async function activate(context: vscode.ExtensionContext) {
   const bin = Path.resolve(context.extensionPath, 'node_modules/@vuedx/preview/bin/preview.js');
-
+  vscode.commands.executeCommand('setContext', 'preview:isViteStarted', true)
   async function getVitePort(rootDir: string) {
     if (processes.has(rootDir)) {
       return processes.get(rootDir).port;
@@ -108,6 +108,7 @@ export async function activate(context: vscode.ExtensionContext) {
           preserveFocus: true,
         },
         {
+          enableFindWidget: true,
           retainContextWhenHidden: true,
           enableScripts: true,
           portMapping: [{ webviewPort: port, extensionHostPort: port }],
@@ -120,10 +121,14 @@ export async function activate(context: vscode.ExtensionContext) {
       instance.stdin.write(JSON.stringify({ command: 'open', arguments: { fileName } }) + '\n');
       const id = Path.relative(rootDir, fileName);
       const uri = `http://localhost:${port}/sandbox?fileName=${encodeURIComponent(id)}`;
-      output.appendLine(`Opening preview for "${fileName}": ${uri}`);
+      output.appendLine(`Opening preview for "${fileName}"`);
       panel.webview.html = getWebviewContent(
-        `<iframe style="border: none;"  width="100%" height="100%" src="${uri}"></iframe>`
+        `
+        <iframe style="border: none;" width="100%" height="100%" src="${uri}"></iframe>
+        `
       );
+
+      output.appendLine(panel.webview.html);
     }),
 
     vscode.commands.registerCommand('preview.stop', async () => {
@@ -157,10 +162,12 @@ export async function activate(context: vscode.ExtensionContext) {
     });
 
     processes.clear();
+    vscode.commands.executeCommand('setContext', 'preview:isViteStarted', false)
   }
 }
 
 async function installPreview(bin: string, context: vscode.ExtensionContext): Promise<void> {
+  if (context.extensionMode === vscode.ExtensionMode.Development) return;
   if (!FS.existsSync(bin)) {
     await vscode.window.withProgress(
       {
@@ -198,7 +205,6 @@ async function installPreview(bin: string, context: vscode.ExtensionContext): Pr
           let error: string = '';
           installation.stderr.on('data', (chunk: Buffer) => {
             output.append(chunk.toString());
-
             error += chunk.toString();
           });
           installation.on('exit', (code) => {
@@ -244,7 +250,20 @@ function getWebviewContent(body: string): string {
     </style>
 </head>
 <body>
-  ${body}
+${body}
+<script>
+window.addEventListener('message', event => {
+  const { kind, payload } = event.data
+
+  if (kind === 'event') {
+    console.log('Dispatch event:', JSON.stringify(payload,null,2))
+    if (payload.type.startsWith('key')) {
+      window.dispatchEvent(new KeyboardEvent(payload.type, payload.init))
+    }
+  }
+}, false)
+</script>
 </body>
 </html>`;
 }
+
