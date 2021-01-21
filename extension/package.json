@@ -11,6 +11,10 @@
     "url": "https://github.com/znck/preview.git",
     "directory": "extension"
   },
+  "files": [
+    "dist",
+    "logo.png"
+  ],
   "activationEvents": [
     "onCommand:preview.show",
     "onCommand:preview.stop",
