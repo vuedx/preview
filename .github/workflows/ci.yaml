@@ -130,7 +130,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: dist
-      
+
       - name: Publish Insiders Extension
         run: |
           pnpm recursive --filter ./extension run release
@@ -155,11 +155,9 @@ jobs:
       (
         github.event_name == 'pull_request' && 
         github.event.action == 'closed' && 
-        github.head_ref == 'refs/heads/changeset-release/main' &&
+        github.head_ref == 'changeset-release/main' &&
+        github.base_ref == 'main' &&
         github.event.pull_request.merged == true
-      ) || (
-        github.event_name == 'release' &&
-        github.event.action == 'released'
       ) || (
         github.event.inputs.release == 'yes'
       )
@@ -178,7 +176,7 @@ jobs:
           version: 5.5.4
           run_install: |
             - args: [--frozen-lockfile, --silent]
-      
+
       - name: Download build artifacts
         uses: actions/download-artifact@v2
         with:
