@@ -1,6 +1,6 @@
 {
   "name": "@vuedx/preview-compiler",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "main": "dist/preview-compiler.js",
   "module": "dist/preview-compiler.esm.js",
   "types": "dist/preview-compiler.d.ts",
