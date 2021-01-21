@@ -1,5 +1,11 @@
 # preview
 
+## 0.1.2
+
+### Patch Changes
+
+- c6ed393: Automated release workflow
+
 ## 0.1.1
 
 ### Patch Changes
