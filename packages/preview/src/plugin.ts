@@ -166,7 +166,7 @@ app.mount('#app')
     {
       name: 'preview:post',
       enforce: 'post',
-      async handleHotUpdate(file, mods, read, server): Promise<ModuleNode[] | void> {
+      async handleHotUpdate({ file, modules: mods, read, server }): Promise<ModuleNode[] | void> {
         if (file.endsWith('.vue')) {
           const affectedModules = new Set<ModuleNode>(
             mods.filter((mod) => mod.id == null || !/\?vue&type=preview/.test(mod.id))
@@ -261,7 +261,7 @@ app.mount('#app')
                 {
                   type: 'js-update',
                   path: '/@preview:setup',
-                  accpetedPath: `/@preview:setup`,
+                  acceptedPath: `/@preview:setup`,
                   timestamp,
                 },
               ],

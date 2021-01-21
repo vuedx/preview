@@ -34,7 +34,7 @@
     "minimist": "^1.2.5",
     "picomatch": "^2.2.2",
     "quick-lru": "^5.1.1",
-    "vite": "^2.0.0-alpha.5",
+    "vite": "^2.0.0-beta.35",
     "vue-docgen-api": "^4.34.2"
   }
 }

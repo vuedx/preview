@@ -116,7 +116,7 @@ importers:
       minimist: 1.2.5
       picomatch: 2.2.2
       quick-lru: 5.1.1
-      vite: 2.0.0-alpha.5
+      vite: 2.0.0-beta.35
       vue-docgen-api: 4.34.2_vue@3.0.5
     devDependencies:
       '@types/debug': 4.1.5
@@ -136,7 +136,7 @@ importers:
       picomatch: ^2.2.2
       quick-lru: ^5.1.1
       typescript: ^4.1.3
-      vite: ^2.0.0-alpha.5
+      vite: ^2.0.0-beta.35
       vue: ^3.0.5
       vue-docgen-api: ^4.34.2
   packages/preview-compiler:
@@ -6470,6 +6470,7 @@ packages:
       colorette: 1.2.1
       nanoid: 3.1.20
       source-map: 0.6.1
+    dev: true
     engines:
       node: ^10 || ^12 || >=14
     resolution:
@@ -6479,7 +6480,6 @@ packages:
       colorette: 1.2.1
       nanoid: 3.1.20
       source-map: 0.6.1
-    dev: true
     engines:
       node: ^10 || ^12 || >=14
     resolution:
@@ -8074,6 +8074,7 @@ packages:
       esbuild: 0.8.27
       postcss: 8.2.2
       rollup: 2.35.1
+    dev: true
     engines:
       node: '>=12.0.0'
     hasBin: true
@@ -8095,6 +8096,20 @@ packages:
       fsevents: 2.1.3
     resolution:
       integrity: sha512-1fGPjSVE4MmCGVguFy7pPurCLnvHu4fJSzVjejd9GoFqCNie+JKCpe3KGsxIb9B8ot/aDd4ISCB0+fH1/01FUA==
+  /vite/2.0.0-beta.35:
+    dependencies:
+      esbuild: 0.8.27
+      postcss: 8.2.4
+      resolve: 1.19.0
+      rollup: 2.35.1
+    dev: false
+    engines:
+      node: '>=12.0.0'
+    hasBin: true
+    optionalDependencies:
+      fsevents: 2.1.3
+    resolution:
+      integrity: sha512-22+MuR3fvy5GmGdjIXHXcUbfVS8P2DK8C2wdcDcdZnugCTd+4XySF2xeRt+VFPyhqq+/KSbdOuA2r47F+VMwig==
   /void-elements/3.1.0:
     dev: false
     engines:
