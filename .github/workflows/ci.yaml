@@ -133,7 +133,7 @@ jobs:
       
       - name: Publish Insiders Extension
         run: |
-          pnpm recursive --filter ./extensions run release
+          pnpm recursive --filter ./extension run release
         env:
           RELEASE_CHANNEL: insiders
           VSCODE_MARKETPLACE_TOKEN: ${{ secrets.VSCODE_MARKETPLACE_TOKEN }}
@@ -141,8 +141,8 @@ jobs:
       - name: Publish Insiders Packages
         run: |
           echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' >> .npmrc
-          pnpm recursive exec -- npm version prerelease --preid=insiders-$(date +%s)
-          pnpm recursive publish --tag insiders --access public --no-git-checks
+          pnpm recursive --filter ./packages exec -- npm version prerelease --preid=insiders-$(date +%s)
+          pnpm recursive --filter ./packages publish --tag insiders --access public --no-git-checks
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -186,7 +186,7 @@ jobs:
 
       - name: Publish Extension
         run: |
-          pnpm recursive --filter ./extensions run release
+          pnpm recursive --filter ./extension run release
         env:
           VSCODE_MARKETPLACE_TOKEN: ${{ secrets.VSCODE_MARKETPLACE_TOKEN }}
 
