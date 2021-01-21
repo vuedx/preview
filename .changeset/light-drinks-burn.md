@@ -1,6 +1,5 @@
 ---
 'preview': minor
-'example': minor
 '@vuedx/preview': minor
 '@vuedx/preview-compiler': minor
 '@vuedx/preview-provider': minor
