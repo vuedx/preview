@@ -55,9 +55,10 @@
     "vsce": "^1.84.0"
   },
   "scripts": {
-    "release": "",
+    "prerelease": "npm run bundle",
+    "release": "vsce publish -p ${VSCODE_MARKETPLACE_TOKEN} --packagePath ./preview.vsix",
     "prebundle": "node scripts/prepare",
-    "bundle": "vsce package",
+    "bundle": "vsce package --out preview.vsix",
     "postbundle": "node scripts/revert"
   }
 }
