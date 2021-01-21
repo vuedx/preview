@@ -1,5 +1,11 @@
 # preview
 
+## 0.1.3
+
+### Patch Changes
+
+- 03225aa: Update vite HMR API
+
 ## 0.1.2
 
 ### Patch Changes
