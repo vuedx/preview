@@ -10,9 +10,9 @@ const pkg = JSON.parse(contents);
 if (process.env.RELEASE_CHANNEL === 'insiders') {
   const today = new Date();
   pkg.name += '-insiders';
-  pkg.version = `${today.getFullYear()}.${today.getMonth() + 1}.${today.getDate()}0${
-    today.getTime() % 86400000
-  }`;
+  pkg.version = `${today.getFullYear()}.${today.getMonth() + 1}.${today.getDate()}0${Math.floor(
+    today.getTime() % 86400
+  )}`;
 }
 
 delete pkg.devDependencies;
