@@ -63,7 +63,7 @@ export function compile(
     cacheHandlers: true,
     nodeTransforms: [createPreviewSetupTransform(setup)],
   });
-  const componentName = Path.basename(componentFileName).replace(/\.vue$/, '');
+  const componentName = Path.basename(componentFileName.replace(/\\/g, '/')).replace(/\.vue$/, '');
 
   const preamble = getCode(
     result.preamble,

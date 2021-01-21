@@ -90,7 +90,7 @@ jobs:
           name: dist
 
       - name: Test
-        run: pnpm run ${{ matrix.command || 'test' }}
+        run: pnpm recursive run test -- --coverage
 
       - name: Collect coverage
         if: matrix.command == 'coverage'
