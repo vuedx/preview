@@ -4,6 +4,9 @@
   "main": "dist/preview-compiler.js",
   "module": "dist/preview-compiler.esm.js",
   "types": "dist/preview-compiler.d.ts",
+  "files": [
+    "dist"
+  ],
   "dependencies": {
     "@vue/compiler-dom": "^3.0.5",
     "@vuedx/template-ast-types": "^0.4.1"

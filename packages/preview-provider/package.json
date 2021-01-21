@@ -7,6 +7,9 @@
   "main": "dist/preview-provider.js",
   "module": "dist/preview-provider.esm.js",
   "types": "dist/preview-provider.d.ts",
+  "files": [
+    "dist"
+  ],
   "devDependencies": {
     "typescript": "^4.1.3"
   }
