@@ -5,26 +5,37 @@
   "publisher": "znck",
   "displayName": "Preview - VueDX",
   "main": "dist/extension.js",
-  "icon": "https://github.com/znck/preview/blob/preview-extension/extension/logo.png",
+  "icon": "logo.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/znck/preview.git",
+    "directory": "extension"
+  },
   "activationEvents": [
-    "onCommand:preview.showPreview",
+    "onCommand:preview.show",
+    "onCommand:preview.stop",
     "onLanguage:vue"
   ],
   "contributes": {
     "commands": [
       {
-        "command": "preview.showPreview",
+        "command": "preview.show",
         "enablement": "resourceLangId == vue",
-        "title": "Show preview",
-        "category": "navigation",
+        "title": "Show",
+        "category": "Preview",
         "icon": "$(open-preview)"
+      },
+      {
+        "command": "preview.stop",
+        "title": "Stop",
+        "category": "Preview"
       }
     ],
     "menus": {
       "editor/title": [
         {
           "when": "resourceLangId == vue",
-          "command": "preview.showPreview",
+          "command": "preview.show",
           "group": "navigation"
         }
       ]
@@ -33,14 +44,19 @@
   "engines": {
     "vscode": "^1.52.0"
   },
-  "dependencies": {
+  "devDependencies": {
     "@vuedx/preview": "workspace:*",
     "get-port": "^5.1.1",
-    "node-fetch": "^2.6.1"
-  },
-  "devDependencies": {
+    "node-fetch": "^2.6.1",
     "@types/node": "^14.14.17",
     "@types/node-fetch": "^2.5.7",
-    "@types/vscode": "^1.52.0"
+    "@types/vscode": "^1.52.0",
+    "vsce": "^1.84.0"
+  },
+  "scripts": {
+    "release": "",
+    "prebundle": "node scripts/prepare",
+    "bundle": "vsce package",
+    "postbundle": "node scripts/revert"
   }
 }

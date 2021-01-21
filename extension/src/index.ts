@@ -4,10 +4,16 @@ import getPort from 'get-port';
 import Path from 'path';
 import vscode from 'vscode';
 
-const processes = new Map<
-  string,
-  Promise<{ instance: ChildProcess; port: number; output: vscode.OutputChannel }>
->();
+declare var __DEV__: boolean;
+declare var __PROD__: boolean;
+declare var __PREVIEW_INSTALLATION_SOURCE__: string;
+interface ViteProcess {
+  port: number;
+  output: vscode.OutputChannel;
+  instance: ChildProcess;
+}
+
+const processes = new Map<string, ViteProcess & { onReady: Promise<void> }>();
 
 function findProjectDir(fileName: string): string {
   let dir = Path.dirname(fileName);
@@ -24,52 +30,76 @@ function findProjectDir(fileName: string): string {
 
 export async function activate(context: vscode.ExtensionContext) {
   const bin = Path.resolve(context.extensionPath, 'node_modules/@vuedx/preview/bin/preview.js');
-  async function getViteInstance(bin: string, rootDir: string) {
+
+  async function getVitePort(rootDir: string) {
+    if (processes.has(rootDir)) {
+      return processes.get(rootDir).port;
+    }
+
+    return await getPort({ port: 11000 });
+  }
+  async function getViteInstance(bin: string, rootDir: string, port: number): Promise<ViteProcess> {
+    await installPreview(bin, context);
+
     if (processes.has(rootDir)) {
       console.log('Reusing vite instance');
 
-      return await processes.get(rootDir);
+      const result = processes.get(rootDir);
+      await result.onReady;
+      return result;
     }
 
-    const result = new Promise<{
-      instance: ChildProcess;
-      port: number;
-      output: vscode.OutputChannel;
-    }>(async (resolve) => {
-      const port = await getPort({ port: 11000 });
+    const output = vscode.window.createOutputChannel(`Preview (${processes.size})`);
+    const instance = exec(`${bin} --port ${port}`, { cwd: rootDir });
+    const onReady = new Promise<void>((resolve, reject) => {
+      let isResolved = false;
+      output.appendLine(`> Launching preview in ${rootDir}`);
 
-      const channel = vscode.window.createOutputChannel('Preview');
-
-      channel.appendLine(`> Launching preview in ${rootDir}`);
-
-      const instance = exec(`${bin} --port ${port}`, { cwd: rootDir });
       instance.stderr.on('data', (message) => {
-        channel.append(message.toString());
+        output.append(message.toString());
       });
 
       instance.stdout.on('data', (message) => {
-        channel.append(message.toString());
-        if (/Vite dev server running at:/.test(message.toString())) {
-          resolve({ port, instance, output: channel });
+        output.append(message.toString());
+        if (/> Network: /.test(message.toString())) {
+          isResolved = true;
+          resolve();
+        }
+      });
+
+      instance.on('exit', (code) => {
+        output.clear();
+        output.hide();
+        output.dispose();
+        if (!isResolved) {
+          reject(new Error(`Preview exited with code: ${code}`));
         }
       });
     });
 
+    const result = { port, output, instance, onReady };
     processes.set(rootDir, result);
 
-    return await result;
+    await onReady;
+
+    return result;
   }
   context.subscriptions.push(
-    vscode.commands.registerCommand('preview.showPreview', async () => {
+    vscode.commands.registerCommand('preview.show', async () => {
       const editor = vscode.window.activeTextEditor;
-      if (editor == null) return;
+      if (editor == null) {
+        vscode.window.showErrorMessage('No active editor');
+        return;
+      }
 
       const fileName = editor.document.fileName;
-      if (!fileName.endsWith('.vue')) return;
+      if (!fileName.endsWith('.vue')) {
+        vscode.window.showErrorMessage('Only .vue files are supported');
+        return;
+      }
 
       const rootDir = findProjectDir(fileName);
-      const { instance, port } = await getViteInstance(bin, rootDir);
-      instance.stdin.write(JSON.stringify({ command: 'open', arguments: { fileName } }) + '\n');
+      const port = await getVitePort(rootDir);
       const panel = vscode.window.createWebviewPanel(
         'preview',
         `Preview ${Path.basename(fileName)}`,
@@ -86,26 +116,115 @@ export async function activate(context: vscode.ExtensionContext) {
       panel.webview.html = getWebviewContent(
         '<div style="display: flex; height: 100%; align-items: center; justify-content: center;">Starting preview...</div>'
       );
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
+      const { instance, output } = await getViteInstance(bin, rootDir, port);
+      instance.stdin.write(JSON.stringify({ command: 'open', arguments: { fileName } }) + '\n');
       const id = Path.relative(rootDir, fileName);
       const uri = `http://localhost:${port}/sandbox?fileName=${encodeURIComponent(id)}`;
+      output.appendLine(`Opening preview for "${fileName}": ${uri}`);
       panel.webview.html = getWebviewContent(
         `<iframe style="border: none;"  width="100%" height="100%" src="${uri}"></iframe>`
       );
     }),
+
+    vscode.commands.registerCommand('preview.stop', async () => {
+      await vscode.window.withProgress(
+        {
+          title: 'Shutting down preview',
+          location: vscode.ProgressLocation.Notification,
+          cancellable: false,
+        },
+        async () => {
+          await stopVite();
+        }
+      );
+    }),
+
     vscode.Disposable.from({
       dispose: async () => {
-        const instances = [...processes.values()];
-
-        await Promise.all(
-          instances.map(async (item) => {
-            (await item).instance.kill('SIGABRT');
-          })
-        );
+        await stopVite();
       },
     })
   );
+
+  async function stopVite(): Promise<void> {
+    const instances = Array.from(processes.values());
+
+    instances.forEach((item) => {
+      if (!item.instance.killed) {
+        item.output.appendLine('Exiting preview.');
+        item.instance.kill('SIGABRT');
+      }
+    });
+
+    processes.clear();
+  }
+}
+
+async function installPreview(bin: string, context: vscode.ExtensionContext): Promise<void> {
+  if (!FS.existsSync(bin)) {
+    await vscode.window.withProgress(
+      {
+        cancellable: true,
+        location: vscode.ProgressLocation.Notification,
+        title: 'Installing @vuedx/preview',
+      },
+      (progress, token) => {
+        return new Promise((resolve, reject) => {
+          const output = vscode.window.createOutputChannel('Preview (installation)');
+          const version = getExtensionName(context).includes('insiders') ? 'insiders' : 'latest';
+          const command = __DEV__
+            ? `pnpm install ${__PREVIEW_INSTALLATION_SOURCE__}`
+            : `npm install @vuedx/preview@${version} --loglevel info`;
+          if (__DEV__) output.show();
+          output.appendLine(command);
+          const installation = exec(command, {
+            cwd: context.extensionPath,
+            env: { ...process.env, CI: 'true' },
+          });
+          token.onCancellationRequested(() => {
+            if (!installation.killed) installation.kill('SIGABRT');
+          });
+          installation.on('message', (chunk) => {
+            output.append(chunk.toString());
+          });
+          installation.on('error', (error) => {
+            output.appendLine(`Error: ${error.message}`);
+            output.appendLine(error.stack ?? '');
+          });
+          installation.stdout.on('data', (chunk: Buffer) => {
+            output.append(chunk.toString());
+            progress.report({ message: chunk.toString() });
+          });
+          let error: string = '';
+          installation.stderr.on('data', (chunk: Buffer) => {
+            output.append(chunk.toString());
+
+            error += chunk.toString();
+          });
+          installation.on('exit', (code) => {
+            if (code !== 0) {
+              reject(
+                new Error(`Error: npm exited with non-zero status code: ${code}.\n\n${error}`)
+              );
+            } else {
+              resolve(true);
+            }
+            if (__PROD__) output.dispose();
+          });
+        });
+      }
+    );
+  }
+}
+
+function getExtensionName(context: vscode.ExtensionContext): string {
+  try {
+    const pkgFile = context.asAbsolutePath('package.json');
+    console.log('PackageFile: ' + pkgFile);
+    return require(pkgFile).name;
+  } catch {
+    return 'znck.preview';
+  }
 }
 
 function getWebviewContent(body: string): string {

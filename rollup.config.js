@@ -1,5 +1,7 @@
 import TS from '@rollup/plugin-typescript';
 import resolve from '@rollup/plugin-node-resolve';
+import replace from '@rollup/plugin-replace';
+import commonjs from '@rollup/plugin-commonjs';
 import builtin from 'builtin-modules';
 import dts from 'rollup-plugin-dts';
 import Path from 'path';
@@ -17,9 +19,9 @@ const config = [
 
   types('preview', { entryName: 'plugin.ts' }),
   bundle('preview', { entryName: 'plugin.ts' }),
+  bundle('preview', { entryName: 'cli.ts', outputName: 'cli.js', formats: ['cjs'] }),
 
-  bundle('preview', { entryName: 'cli.ts', outputName: 'cli.js' }),
-  bundle('extension', { outputName: 'extension.js', external: ['vscode'] }),
+  bundle('extension', { outputName: 'extension.js', external: ['vscode'], formats: ['cjs'] }),
 ];
 
 export default config;
@@ -44,18 +46,35 @@ function bundle(
     {
       file: `${baseDir}/${packageName}/dist/${outputName}`,
       format: 'cjs',
+      sourcemap: true,
+      sourcemapExcludeSources: false,
     },
     {
       file: `${baseDir}/${packageName}/dist/${outputName.replace(/\.js$/, '.esm.js')}`,
       format: 'es',
+      sourcemap: true,
+      sourcemapExcludeSources: false,
     },
   ];
 
+  const BUILD = process.env.BUILD ?? 'production';
+  const isProd = BUILD === 'production';
+
   return {
     input: `${baseDir}/${packageName}/src/${entryName}`,
-    output: output.filter((output) => formats.includes(output.format)),
+    output: output.filter((output) => formats.includes(output.format ?? '')),
     plugins: [
       resolve(),
+      commonjs(),
+      replace({
+        values: {
+          __DEV__: JSON.stringify(!isProd),
+          __PROD__: JSON.stringify(isProd),
+          __PREVIEW_INSTALLATION_SOURCE__: JSON.stringify(
+            Path.resolve(__dirname, './packages/preview/')
+          ),
+        },
+      }),
       TS({
         tsconfig: `${baseDir}/${packageName}/tsconfig.json`,
       }),
