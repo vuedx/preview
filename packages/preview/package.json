@@ -23,18 +23,19 @@
     "vue": "^3.0.5"
   },
   "dependencies": {
-    "@vuedx/analyze": "^0.4.1",
-    "@vuedx/compiler-sfc": "^0.4.1",
+    "@vuedx/analyze": "^0.6.0",
+    "@vuedx/compiler-sfc": "^0.6.0",
     "@vuedx/preview-compiler": "workspace:*",
     "@vuedx/preview-provider": "workspace:*",
     "@vuedx/preview-shell": "workspace:*",
     "chalk": "^4.1.0",
     "debug": "^4.3.1",
-    "fast-glob": "^3.2.4",
+    "fast-glob": "^3.2.5",
     "minimist": "^1.2.5",
     "picomatch": "^2.2.2",
-    "quick-lru": "^5.1.1",
-    "vite": "^2.0.0-beta.35",
+    "quick-lru": "^6.0.0",
+    "sirv": "^1.0.10",
+    "vite": "2.0.0-beta.44",
     "vue-docgen-api": "^4.34.2"
   }
 }

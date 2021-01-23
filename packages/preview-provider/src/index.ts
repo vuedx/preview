@@ -1,4 +1,4 @@
-import { Component } from '@vue/runtime-core';
+import type { Component } from 'vue';
 import { useComponents } from './components';
 import { useRequests, installFetchInterceptor, RequestOptions } from './fetch';
 import { provider } from './utilities';

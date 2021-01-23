@@ -30,27 +30,28 @@ function findProjectDir(fileName: string): string {
 
 export async function activate(context: vscode.ExtensionContext) {
   const bin = Path.resolve(context.extensionPath, 'node_modules/@vuedx/preview/bin/preview.js');
-  vscode.commands.executeCommand('setContext', 'preview:isViteStarted', true)
+  vscode.commands.executeCommand('setContext', 'preview:isViteStarted', true);
   async function getVitePort(rootDir: string) {
     if (processes.has(rootDir)) {
       return processes.get(rootDir).port;
     }
 
-    return await getPort({ port: 11000 });
+    return await getPort({ port: 65000 });
   }
   async function getViteInstance(bin: string, rootDir: string, port: number): Promise<ViteProcess> {
     await installPreview(bin, context);
 
     if (processes.has(rootDir)) {
-      console.log('Reusing vite instance');
-
       const result = processes.get(rootDir);
       await result.onReady;
       return result;
     }
 
     const output = vscode.window.createOutputChannel(`Preview (${processes.size})`);
-    const instance = exec(`${bin} --port ${port}`, { cwd: rootDir });
+    const instance = exec(`${bin} --port ${port}`, {
+      cwd: rootDir,
+      env: { ...process.env, CI: 'true' },
+    });
     const onReady = new Promise<void>((resolve, reject) => {
       let isResolved = false;
       output.appendLine(`> Launching preview in ${rootDir}`);
@@ -121,14 +122,13 @@ export async function activate(context: vscode.ExtensionContext) {
       instance.stdin.write(JSON.stringify({ command: 'open', arguments: { fileName } }) + '\n');
       const id = Path.relative(rootDir, fileName);
       const uri = `http://localhost:${port}/sandbox?fileName=${encodeURIComponent(id)}`;
-      output.appendLine(`Opening preview for "${fileName}"`);
+      output.appendLine(`Preview File: "${fileName}"`);
+      output.appendLine(`URL: "${uri}"`);
       panel.webview.html = getWebviewContent(
         `
         <iframe style="border: none;" width="100%" height="100%" src="${uri}"></iframe>
         `
       );
-
-      output.appendLine(panel.webview.html);
     }),
 
     vscode.commands.registerCommand('preview.stop', async () => {
@@ -162,7 +162,7 @@ export async function activate(context: vscode.ExtensionContext) {
     });
 
     processes.clear();
-    vscode.commands.executeCommand('setContext', 'preview:isViteStarted', false)
+    vscode.commands.executeCommand('setContext', 'preview:isViteStarted', false);
   }
 }
 
@@ -266,4 +266,3 @@ window.addEventListener('message', event => {
 </body>
 </html>`;
 }
-

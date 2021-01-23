@@ -1,4 +1,4 @@
-import { ComponentPublicInstance, App } from '@vue/runtime-core';
+import { ComponentPublicInstance, App } from 'vue';
 import { SetupOptions } from '@vuedx/preview-provider';
 import Path from 'path';
 import { getStackTraceLine } from './stacktrace';

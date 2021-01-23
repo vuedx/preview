@@ -1,4 +1,4 @@
-import { App, ComponentPublicInstance } from '@vue/runtime-core';
+import { App, ComponentPublicInstance } from 'vue';
 import { SetupOptions } from '@vuedx/preview-provider';
 import { Module } from 'module';
 import Path from 'path';

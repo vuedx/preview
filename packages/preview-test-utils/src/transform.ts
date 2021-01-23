@@ -69,15 +69,15 @@ export function generatePreviewComponent(
     if (configFile != null) {
       const importSource = configFile.replace(/\.(ts|js)$/, '');
       preamble = [
-        `import * as _previewUserConfig from '${importSource}'`,
-        `import { createApp as _vueCreateApp } from 'vue'`,
+        `import * as _preview from '${importSource}'`,
+        `import * as _vue from 'vue'`,
         `function _createApp(component) {`,
-        `  const createApp = typeof _previewUserConfig.createApp === 'function'`,
-        `    ? _previewUserConfig.createApp`,
-        `    : _vueCreateApp`,
+        `  const createApp = typeof _preview.createApp === 'function'`,
+        `    ? _preview.createApp`,
+        `    : _vue.createApp`,
         `  const app = createApp(component)`,
-        `  if (_previewUserConfig.x != null) {`,
-        `    app.provide('@preview:UserProviders', _previewUserConfig.x)`,
+        `  if (_preview.x != null) {`,
+        `    app.provide('@preview:UserProviders', _preview.x)`,
         `  }`,
         `  return app`,
         `}`,

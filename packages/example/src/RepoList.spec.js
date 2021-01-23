@@ -1,8 +1,8 @@
 import 'whatwg-fetch';
 
-import { waitFor } from '@testing-library/dom';
+import { waitFor, findAllByRole, findByText } from '@testing-library/dom';
 import { mount } from '@vue/test-utils';
-import { usePreview } from '@vuedx/preview-test-utils';
+import { usePreview, usePreviewApp } from '@vuedx/preview-test-utils';
 
 describe('RepoList', () => {
   test('should render list of repositories', async () => {

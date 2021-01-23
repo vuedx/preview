@@ -6,7 +6,7 @@ export default defineComponent({
   components: { BaseDevice },
   props: {
     device: {
-      type: null as PropType<DeviceSpecs>,
+      type: (null as unknown) as PropType<DeviceSpecs>,
       required: true,
     },
   },

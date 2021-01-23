@@ -56,28 +56,29 @@ export function compile(
     state: '{}',
   };
   const result = baseCompile(content, {
-    inline: true,
+    inline: false,
     mode: 'module',
     sourceMap: false,
     hoistStatic: true,
     cacheHandlers: true,
     nodeTransforms: [createPreviewSetupTransform(setup)],
   });
-  const componentName = Path.basename(componentFileName.replace(/\\/g, '/')).replace(/\.vue$/, '');
+  const componentName = (componentFileName.split(Path.sep).pop()??'self').replace(/\.vue$/, '');
 
   const preamble = getCode(
     result.preamble,
     `import { defineComponent, reactive, inject } from 'vue'`,
     `import { provider, useRequests, useComponents, installFetchInterceptor } from '@vuedx/preview-provider'`,
-    `import ${componentName} from '${componentFileName}'`,
-    `installFetchInterceptor()`
+    `import _component_self from '${componentFileName.replace(/\\/g, '/')}'`,
+    `installFetchInterceptor()`,
+    result.code
   );
 
   const source = `defineComponent({
   name: 'Preview',
-  components: { ${componentName} },
+  components: { "${componentName}": _component_self },
   setup() {
-    const $p = { 
+    const preview = { 
       ...provider, 
       state: reactive(overrides.state != null ? overrides.state : ${setup.state}), 
       x: inject('@preview:UserProviders', null),
@@ -85,9 +86,13 @@ export function compile(
   
     useRequests({ ...(${setup.requests}), ...overrides.requests })
     useComponents({...(${setup.components}), ...overrides.components})
-  
-    return (${result.code})
+
+    return { preview, p: preview }
   },
+  created() {
+    this.$p = this.preview
+  },
+  render,
 })`.trim();
 
   if (hmrId != null) {
@@ -107,10 +112,10 @@ export function compile(
 }
 
 function generateHMR(hmrId: string) {
-  return `
+  return `  
+_preview_main.__hmrId = '${hmrId}'
+typeof __VUE_HMR_RUNTIME__ !== 'undefined' && __VUE_HMR_RUNTIME__.createRecord(_preview_main.__hmrId, _preview_main)
 if (import.meta.hot) {
-  _preview_main.__hmrId = '${hmrId}'
-  __VUE_HMR_RUNTIME__.createRecord(_preview_main.__hmrId, _preview_main)
   import.meta.hot.accept(({ default: updated }) => {
     __VUE_HMR_RUNTIME__.reload(updated.__hmrId, updated)
   })

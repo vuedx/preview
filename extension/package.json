@@ -50,12 +50,12 @@
     "vscode": "^1.52.0"
   },
   "devDependencies": {
+    "@types/node": "^14.14.22",
+    "@types/node-fetch": "^2.5.8",
+    "@types/vscode": "^1.52.0",
     "@vuedx/preview": "workspace:*",
     "get-port": "^5.1.1",
     "node-fetch": "^2.6.1",
-    "@types/node": "^14.14.17",
-    "@types/node-fetch": "^2.5.7",
-    "@types/vscode": "^1.52.0",
     "vsce": "^1.84.0"
   },
   "scripts": {
