@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
     inputs:
       release:
-        description: Publish
-        default: 'no'
+        description: Publish to Insiders/Production
+        default: 'Insiders'
   pull_request:
     branches:
       - main
@@ -98,7 +98,7 @@ jobs:
     environment: Insiders
     needs: test
     if: |
-      github.event.inputs.release == 'yes'
+      github.event.inputs.release == 'Insiders'
     steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.4.1
@@ -146,11 +146,15 @@ jobs:
     environment: Production
     needs: test
     if: |
-      github.event_name == 'pull_request' && 
-      github.event.action == 'closed' && 
-      github.head_ref == 'changeset-release/main' &&
-      github.base_ref == 'main' &&
-      github.event.pull_request.merged == true
+      (
+        github.event_name == 'pull_request' && 
+        github.event.action == 'closed' && 
+        github.head_ref == 'changeset-release/main' &&
+        github.base_ref == 'main' &&
+        github.event.pull_request.merged == true
+      ) || (
+        github.event.inputs.release == 'Production'
+      )
     steps:
       - name: Checkout
         uses: actions/checkout@v2
