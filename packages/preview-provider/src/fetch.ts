@@ -1,5 +1,5 @@
 import { notify } from './communication';
-import { getCurrentInstance, onUnmounted } from '@vue/runtime-core';
+import { getCurrentInstance, onUnmounted } from 'vue';
 interface RequestHandler {
   (
     params: Record<string, string>,
@@ -19,7 +19,7 @@ interface InterceptorRecord {
 
 const state: { interceptors: Array<InterceptorRecord>; warned: Set<string> } = {
   interceptors: [],
-  warned: new Set(),
+  warned: new Set('/'),
 };
 const REQUEST_RE = /^(GET|POST|PUT|DELETE|HEAD)?\s?(.+)$/;
 
@@ -63,8 +63,6 @@ export function installFetchInterceptor(): void {
 
       return new Response(JSON.stringify(result));
     }
-
-    console.log(input, init);
 
     const id = `${method} ${url}`;
     if (!state.warned.has(id)) {

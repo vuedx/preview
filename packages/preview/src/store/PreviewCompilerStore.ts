@@ -1,5 +1,6 @@
 import { DescriptorStore } from './DescriptorStore';
 import { compile } from '@vuedx/preview-compiler';
+import crypto from 'crypto';
 
 export class PreviewCompilerStore {
   constructor(private descriptors: DescriptorStore) {}
@@ -14,7 +15,7 @@ export class PreviewCompilerStore {
   compileText(content: string, fileName: string, id: string = fileName + ':auto'): string {
     return compile(content, {
       componentFileName: fileName,
-      hmrId: id,
+      hmrId: crypto.createHash('md5').update(id).digest('hex').substr(0, 8),
     });
   }
 }

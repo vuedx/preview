@@ -1,4 +1,4 @@
-import { Component, getCurrentInstance } from '@vue/runtime-core';
+import { Component, getCurrentInstance } from 'vue';
 import { defineStubComponent } from './utilities';
 
 export function useComponents(components: Record<string, Component>) {

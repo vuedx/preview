@@ -11,7 +11,7 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
 
-    "lib": ["ES2019"]
+    "lib": ["ES2019"],
   },
   "exclude": ["**/node_modules/**"]
 }

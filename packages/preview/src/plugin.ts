@@ -3,6 +3,7 @@ import { SFCBlock } from '@vuedx/compiler-sfc';
 import glob from 'fast-glob';
 import FS from 'fs';
 import Path from 'path';
+import sirv from 'sirv';
 import { ModuleNode, Plugin, send } from 'vite';
 import { ComponentMetadataStore } from './store/ComponentMetadataStore';
 import { DescriptorStore } from './store/DescriptorStore';
@@ -86,10 +87,6 @@ function PreviewPlugin(): Plugin[] {
           );
         }
 
-        if (source.startsWith('/@preview:hmr')) {
-          return Path.resolve(__dirname, '../browser/vite-hmr-client.js');
-        }
-
         if (source === '@vuedx/preview-provider') {
           return providerPath;
         }
@@ -133,16 +130,16 @@ function PreviewPlugin(): Plugin[] {
         if (id.startsWith('/@preview:setup')) {
           return setupFile != null
             ? `
-import * as setup from '/@fs/${setupFile}'
-import { createApp as vueCreateApp } from 'vue'
+import * as preview from '${setupFile}'
+import * as vue from 'vue'
 
-export const createApp = setup.createApp ?? vueCreateApp
-export const x = setup.x ?? {}
+export const createApp = preview.createApp ?? vue.createApp
+export const x = preview.x ?? {}
 `.trimStart()
             : `
-import { createApp } from 'vue'
+import * as vue from 'vue'
 
-export { createApp }
+export const createApp = vue.createApp
 export const x = {}
 `.trimStart();
         }
@@ -166,10 +163,11 @@ app.mount('#app')
     {
       name: 'preview:post',
       enforce: 'post',
-      async handleHotUpdate({ file, modules: mods, read, server }): Promise<ModuleNode[] | void> {
+      async handleHotUpdate({ file, modules: mods, read, server }) {
         if (file.endsWith('.vue')) {
           const affectedModules = new Set<ModuleNode>(
-            mods.filter((mod) => mod.id == null || !/\?vue&type=preview/.test(mod.id))
+            mods
+            // .filter((mod) => mod.id == null || !/\?vue&type=preview/.test(mod.id))
           );
 
           const content = await read();
@@ -275,40 +273,35 @@ app.mount('#app')
           }
         });
 
-        server.app.use(async function ServePreviewShell(req, res, next) {
+        const serve = sirv(shellBasePath, { dev: true, etag: true, extensions: [] });
+        server.middlewares.use(async function ServePreviewShell(req, res, next) {
           if (req.method === 'GET') {
             const url = (req.url ?? '/').split('?').shift() ?? '/';
-            if (
-              url.startsWith('/@preview:shell/') ||
-              ['/favicon.ico'].includes(url) ||
-              !/[@.]/.test(url)
-            ) {
-              const fileName = Path.resolve(
-                shellBasePath,
-                req.url?.replace('/@preview:shell/', '').replace(/^\//, '') || 'index.html'
+            if (url.startsWith('/@preview:shell/')) {
+              req.url = url.replace('/@preview:shell', '');
+              return serve(req, res, next);
+            }
+
+            if (/^[a-z-\/]+$/.test(url)) {
+              const html = FS.readFileSync(
+                Path.resolve(shellBasePath, 'index.html'),
+                'utf-8'
+              ).replace(
+                '</body>',
+                `<script type="module" src="/@vite/client"></script>` +
+                  `<script type="module" src="/@preview:components"></script>` +
+                  genVSCodeKeyboardEventSupport() +
+                  `</body>`
               );
-              if (/\.(css|js|png|ico|xml|json|map|svg)$/.test(fileName)) {
-                req.url = `/@fs/${fileName.replace(/\\/g, '/')}`;
-              } else {
-                const html = FS.readFileSync(
-                  Path.resolve(shellBasePath, 'index.html'),
-                  'utf-8'
-                ).replace(
-                  '</body>',
-                  `<script type="module" src="/@preview:hmr"></script>` +
-                    `<script type="module" src="/@preview:components"></script>` +
-                    genVSCodeKeyboardEventSupport() +
-                    `</body>`
-                );
-                return send(req, res, html, 'html');
-              }
+
+              return send(req, res, html, 'html');
             }
           }
 
           return await next();
         });
 
-        server.app.use(async function ServePreviewApp(req, res, next) {
+        server.middlewares.use(async function ServePreviewApp(req, res, next) {
           if (req.url?.startsWith('/@preview:iframe/')) {
             const result = getPreviewSelector(req.url);
 
@@ -325,7 +318,9 @@ app.mount('#app')
   <script type="module" src="/@vite/client"></script>
 </head>
 <body>
-  <div id="app"></div>
+  <div id="app">
+    <div style="position: fixed; top: 0; bottom: 0; left: 0; right: 0; display: grid; place-content: center; background: white">Loading</div>  
+  </div>
   <script type="module" src="/@preview:app/${result.fileName}?index=${result.index ?? ''}"></script>
   ${genVSCodeKeyboardEventSupport()}
 </body>

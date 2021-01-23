@@ -1,4 +1,4 @@
-import { Component, defineComponent, h } from '@vue/runtime-core';
+import { Component, defineComponent, h } from 'vue';
 
 export function repeat<T>(count: number, generator: (index: number) => T): T[] {
   const items: T[] = [];
@@ -82,11 +82,11 @@ export function defineStubComponent(name: string, component: Component): Compone
 }
 
 export const stub = createFunctionObject(
-  (content: string = 'stubbed component') => stub.static(content),
+  (content: string = 'stubbed component'): Component => stub.static(content),
   {
-    static: (content: string) =>
+    static: (content: string): Component =>
       defineStubComponent('anonymous', defineComponent({ render: () => content })),
-    showProps: () =>
+    showProps: (): Component =>
       defineStubComponent(
         'anonymous',
         defineComponent((_, { attrs }) => () => h('pre', null, JSON.stringify(attrs, null, 2)))
@@ -94,9 +94,9 @@ export const stub = createFunctionObject(
   }
 );
 
-export const component = createFunctionObject(() => defineComponent(() => () => h('div')), {
-  image: createFunctionObject((src?: string) => defineComponent(() => () => h('img', { src })), {
-    unsplash: (query: string = 'random') =>
+export const component = createFunctionObject((): Component => defineComponent(() => () => h('div')), {
+  image: createFunctionObject((src?: string): Component => defineComponent(() => () => h('img', { src })), {
+    unsplash: (query: string = 'random'): Component =>
       component.image('https://unsplash.it/?q=' + query + '&id=' + number.int.in(0, 50)),
   }),
 });

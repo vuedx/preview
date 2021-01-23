@@ -8,18 +8,18 @@ import Path from 'path';
 
 /** @type {import('rollup').RollupOptions[]} */
 const config = [
-  types('preview-compiler'),
   bundle('preview-compiler'),
+  types('preview-compiler'),
 
-  types('preview-provider'),
   bundle('preview-provider'),
+  types('preview-provider', { entryName: '../dist/types/index.d.ts' }),
 
-  types('preview-test-utils'),
   bundle('preview-test-utils'),
+  types('preview-test-utils', { entryName: '../dist/types/index.d.ts' }),
 
-  types('preview', { entryName: 'plugin.ts' }),
   bundle('preview', { entryName: 'plugin.ts' }),
   bundle('preview', { entryName: 'cli.ts', outputName: 'cli.js', formats: ['cjs'] }),
+  types('preview', { entryName: 'plugin.ts' }),
 
   bundle('extension', { outputName: 'extension.js', external: ['vscode'], formats: ['cjs'] }),
 ];
@@ -98,7 +98,7 @@ function types(
 ) {
   const config = bundle(packageName, { entryName, outputName, formats: ['es'], external });
 
-  config.plugins = [dts({ compilerOptions: { moduleResolution: 2 } })];
+  config.plugins = [dts()];
 
   return config;
 }

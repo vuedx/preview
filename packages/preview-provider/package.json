@@ -2,7 +2,7 @@
   "name": "@vuedx/preview-provider",
   "version": "0.1.0",
   "dependencies": {
-    "@vue/runtime-core": "^3.0.5"
+    "vue": "^3.0.5"
   },
   "main": "dist/preview-provider.js",
   "module": "dist/preview-provider.esm.js",

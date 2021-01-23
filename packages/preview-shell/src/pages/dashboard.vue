@@ -1,5 +1,6 @@
 <script lang="ts">
-import { computed, defineComponent, reactive, ref, watchEffect } from 'vue';
+import { computed, defineComponent, reactive, ref, toRefs, watchEffect } from 'vue';
+import { useRouter } from 'vue-router';
 import { components } from '../components';
 import Content from '../components/Content.vue';
 import Device from '../components/Device.vue';
@@ -17,22 +18,13 @@ export default defineComponent({
   },
 
   setup(props) {
-    const current = ref<string>(props.fileName ?? '');
+    const router = useRouter();
+    const current = toRefs(props).fileName;
     const filters = reactive<Record<string, Record<string, boolean>>>({});
     const component = computed(() => {
-      const id = current.value;
+      const id = current?.value;
       return id != null ? components.value.find((component) => component.id === id) : undefined;
     });
-
-    watchEffect(() => {
-      if (props.fileName) {
-        current.value = props.fileName;
-      }
-    });
-
-    if (current.value == null && components.value.length > 0) {
-      current.value = components.value[0].id;
-    }
 
     function toggleFilter(componentId: string, previewId: number) {
       filters[componentId] = {
@@ -45,7 +37,11 @@ export default defineComponent({
       return filters[componentId]?.[previewId] ?? true;
     }
 
-    return { component, current, toggleFilter, getFilter };
+    function setCurrent(fileName: string) {
+      router.push({ name: 'dashboard', query: { fileName } });
+    }
+
+    return { component, current, toggleFilter, getFilter, setCurrent };
   },
 });
 </script>
@@ -56,7 +52,11 @@ export default defineComponent({
       class="fixed bg-white p-4 top-0 bottom-0 right-0 w-64 transform transition-transform duration-500 ease-in-out hover:translate-x-0 focus:translate-x-0 focus-within:translate-x-0 shadow-md"
       :class="component ? 'translate-x-60' : 'translate-x-0'"
     >
-      <ExplorerComponents v-model:active="current" #default="{ component }">
+      <ExplorerComponents
+        :active="current"
+        @update:active="setCurrent($event)"
+        #default="{ component }"
+      >
         <ul :key="component.id" class="-mt-2 pb-2">
           <li v-for="preview of component.previews" :key="preview.id" class="mx-4">
             <label>
