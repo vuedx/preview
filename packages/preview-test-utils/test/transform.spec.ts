@@ -20,7 +20,7 @@ describe('transform()', () => {
 
       var _previewProvider = require(\\"@vuedx/preview-provider\\");
 
-      var _Example = _interopRequireDefault(require(\\"${abs('fixture/Example.vue')}\\"));
+      var _Example = _interopRequireDefault(require(\\"${abs('fixture/Example.vue').replace(/\\/g, '/')}\\"));
 
       function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -35,7 +35,7 @@ describe('transform()', () => {
       var _default = (overrides = {}) => (0, _vue.defineComponent)({
         name: 'Preview',
         components: {
-          Example: _Example.default
+          \\"Example\\": _Example.default
         },
 
         setup() {

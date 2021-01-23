@@ -1,6 +1,7 @@
 import { ComponentInfo, createFullAnalyzer } from '@vuedx/analyze';
 import { SFCBlock } from '@vuedx/compiler-sfc';
 import * as Path from 'path';
+import * as FS from 'fs';
 import { DescriptorStore } from './DescriptorStore';
 
 interface PreviewMetadata {
@@ -27,23 +28,46 @@ export class ComponentMetadataStore {
   private components = new Map<string, Omit<ComponentMetadata, 'loader' | 'docgen'>>();
   private analyzer = createFullAnalyzer();
 
-  constructor(public root: string, private descriptors: DescriptorStore) {}
+  constructor (public root: string, private descriptors: DescriptorStore) { }
+
+  isSupported(fileName: string): boolean {
+    return (Path.isAbsolute(fileName) ? fileName.startsWith(this.root) : !fileName.startsWith('..')) && fileName.endsWith('.vue')
+  }
+
+  private getAbsolutePath(fileName: string): string {
+    if (Path.isAbsolute(fileName)) return fileName
+    return Path.resolve(this.root, fileName.replace(/[\\\/]/g, Path.sep))
+  }
+
+  private normalize(fileName: string): string {
+    return fileName.replace(/\\/g, '/')
+  }
 
   get(fileName: string): Readonly<ComponentMetadata> {
-    const metadata =
-      this.components.get(fileName) ?? this.components.get(Path.resolve(this.root, fileName));
-    if (metadata == null) throw new Error('Metadata not found');
+    const absFileName = this.getAbsolutePath(fileName)
+    const metadata = this.components.get(absFileName);
+    if (metadata == null) {
+      if (this.isSupported(fileName) && FS.existsSync(absFileName)) {
+        this.add(absFileName, FS.readFileSync(absFileName, 'utf-8'))
+        const metadata = this.components.get(absFileName);
+        if (metadata != null) return metadata
+      }
+
+      throw new Error('Metadata not found: ' + absFileName);
+    }
     return metadata;
   }
 
   add(fileName: string, content: string): void {
-    const relativeFileName = Path.relative(this.root, fileName);
+    const absFileName = this.getAbsolutePath(fileName)
+    const relativeFileName = this.normalize(Path.relative(this.root, absFileName));
+    const id = relativeFileName.replace(/\.vue$/, '')
 
     this.text = '';
 
-    this.components.set(fileName, {
-      id: relativeFileName.replace(/\.vue$/, ''),
-      name: Path.basename(fileName).replace(/\.vue$/, ''),
+    this.components.set(absFileName, {
+      id: id,
+      name: Path.posix.basename(id),
       path: relativeFileName,
       info: null as any,
       previews: [],
@@ -54,21 +78,22 @@ export class ComponentMetadataStore {
 
   remove(fileName: string): void {
     this.text = '';
-    this.components.delete(fileName);
+    this.components.delete(this.getAbsolutePath(fileName));
   }
 
   reload(fileName: string, content: string): void {
     this.text = '';
 
-    const component = this.components.get(fileName);
+    const absFileName = this.getAbsolutePath(fileName)
+    const component = this.components.get(absFileName);
     if (component != null) {
-      component.info = this.analyzer.analyze(content, fileName); // TODO: Make this lazy...
-      component.previews = this.parse(content, fileName);
+      component.info = this.analyzer.analyze(content, this.normalize(absFileName)); // TODO: Make this lazy...
+      component.previews = this.parse(content, absFileName);
     }
   }
 
-  private parse(content: string, fileName: string): PreviewMetadata[] {
-    const descriptor = this.descriptors.get(fileName, content);
+  private parse(content: string, absFileName: string): PreviewMetadata[] {
+    const descriptor = this.descriptors.get(absFileName, content);
     const blocks: SFCBlock[] = descriptor.customBlocks;
     let index = 0;
 
@@ -87,7 +112,7 @@ export class ComponentMetadataStore {
           };
         }
       })
-      .filter((item): item is PreviewMetadata => item != null);              
+      .filter((item): item is PreviewMetadata => item != null);
   }
 
   getText(): string {

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "scripts": {
     "start": "vite serve",
-    "build": "vite build --base '/@preview:shell/'"
+    "build": "vite build --base /@preview:shell/"
   },
   "files": [
     "dist"

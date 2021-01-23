@@ -63,20 +63,20 @@ export function compile(
     cacheHandlers: true,
     nodeTransforms: [createPreviewSetupTransform(setup)],
   });
-  const componentName = Path.basename(componentFileName.replace(/\\/g, '/')).replace(/\.vue$/, '');
+  const componentName = (componentFileName.split(Path.sep).pop()??'self').replace(/\.vue$/, '');
 
   const preamble = getCode(
     result.preamble,
     `import { defineComponent, reactive, inject } from 'vue'`,
     `import { provider, useRequests, useComponents, installFetchInterceptor } from '@vuedx/preview-provider'`,
-    `import ${componentName} from '${componentFileName}'`,
+    `import _component_self from '${componentFileName.replace(/\\/g, '/')}'`,
     `installFetchInterceptor()`,
     result.code
   );
 
   const source = `defineComponent({
   name: 'Preview',
-  components: { ${componentName} },
+  components: { "${componentName}": _component_self },
   setup() {
     const preview = { 
       ...provider, 

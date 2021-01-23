@@ -264,7 +264,7 @@ app.mount('#app')
                 },
               ],
             });
-          } else if (fileName.startsWith(store.root) && fileName.endsWith('.vue')) {
+          } else if (store.isSupported(fileName)) {
             if (event === 'unlink') {
               store.remove(fileName);
             } else if (event === 'add') {
