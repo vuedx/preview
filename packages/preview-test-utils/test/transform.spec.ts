@@ -13,6 +13,7 @@ describe('transform()', () => {
       Object.defineProperty(exports, \\"__esModule\\", {
         value: true
       });
+      exports.render = render;
       exports.default = void 0;
 
       var _vue = require(\\"vue\\");
@@ -25,6 +26,12 @@ describe('transform()', () => {
 
       (0, _previewProvider.installFetchInterceptor)();
 
+      function render(_ctx, _cache) {
+        const _component_Example = (0, _vue.resolveComponent)(\\"Example\\");
+
+        return (0, _vue.openBlock)(), (0, _vue.createBlock)(_component_Example);
+      }
+
       var _default = (overrides = {}) => (0, _vue.defineComponent)({
         name: 'Preview',
         components: {
@@ -32,7 +39,7 @@ describe('transform()', () => {
         },
 
         setup() {
-          const $p = { ..._previewProvider.provider,
+          const preview = { ..._previewProvider.provider,
             state: (0, _vue.reactive)(overrides.state != null ? overrides.state : {
               foo: 1
             }),
@@ -44,13 +51,17 @@ describe('transform()', () => {
           (0, _previewProvider.useComponents)({ ...{},
             ...overrides.components
           });
-          return (_ctx, _cache) => {
-            const _component_Example = (0, _vue.resolveComponent)(\\"Example\\");
-
-            return (0, _vue.openBlock)(), (0, _vue.createBlock)(_component_Example);
+          return {
+            preview,
+            p: preview
           };
-        }
+        },
 
+        created() {
+          this.$p = this.preview;
+        },
+
+        render
       });
 
       exports.default = _default;"
