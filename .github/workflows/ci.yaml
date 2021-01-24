@@ -96,19 +96,27 @@ jobs:
         with:
           file: ./coverage/coverage-final.json
 
-  insiders:
-    name: Insiders Release
-    runs-on: ubuntu-latest
-    environment: Insiders
+
+  cancel:
+    name: Cancel Release
+    runs-on: ubuntu-20.04
     needs: test
-    if: |
-      github.event.inputs.release == 'Insiders'
     steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.4.1
         with:
           access_token: ${{ github.token }}
 
+  insiders:
+    name: Insiders Release
+    runs-on: ubuntu-latest
+    environment: Insiders
+    needs:
+      - test
+      - cancel
+    if: |
+      github.event.inputs.release == 'Insiders'
+    steps:
       - name: Checkout
         uses: actions/checkout@v2
 
