@@ -100,6 +100,7 @@ jobs:
   cancel:
     name: Cancel Release
     runs-on: ubuntu-20.04
+    needs: test
     steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.4.1
@@ -156,7 +157,9 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     environment: Production
-    needs: test
+    needs:
+      - test
+      - cancel
     if: |
       (
         github.event_name == 'release' && 
