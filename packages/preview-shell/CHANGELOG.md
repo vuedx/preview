@@ -1,5 +1,11 @@
 # @vuedx/preview-shell
 
+## 0.1.2
+
+### Patch Changes
+
+- 18a1b02: Fix build in release pipeline
+
 ## 0.1.1
 
 ### Patch Changes

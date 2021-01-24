@@ -1,5 +1,11 @@
 # preview
 
+## 0.1.5
+
+### Patch Changes
+
+- 18a1b02: Bump version
+
 ## 0.1.4
 
 ### Patch Changes

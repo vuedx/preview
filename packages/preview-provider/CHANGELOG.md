@@ -1,5 +1,11 @@
 # @vuedx/preview-provider
 
+## 0.1.2
+
+### Patch Changes
+
+- 18a1b02: Bump version
+
 ## 0.1.1
 
 ### Patch Changes
