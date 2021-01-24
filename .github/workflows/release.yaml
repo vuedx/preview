@@ -1,12 +1,15 @@
 name: Release
 
 on:
+  pull_request:
+    types:
+      - closed
   workflow_dispatch:
-
 jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -30,3 +33,25 @@ jobs:
         uses: changesets/action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish:
+    name: Release
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'pull_request' &&
+      github.event.action == 'closed' &&
+      github.event.merged
+    steps:
+      - name: Get current time
+        uses: 1466587594/get-current-time@v2
+        id: timestamp
+        with:
+          format: YYYY.MM.DD-HH.mm.ss
+      - name: 'Create Release'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.timestamp.formattedTime }}
+          release_name: Release v${{ steps.timestamp.formattedTime }}
+          body: ${{ event.pull_request.body }}

@@ -4,11 +4,15 @@ on:
   workflow_dispatch:
     inputs:
       release:
+        required: false
         description: Publish to Insiders/Production
         default: 'Insiders'
   pull_request:
     branches:
       - main
+  release:
+    types:
+      - published
   push:
     paths-ignore:
       - 'docs/**'
@@ -147,11 +151,8 @@ jobs:
     needs: test
     if: |
       (
-        github.event_name == 'pull_request' && 
-        github.event.action == 'closed' && 
-        github.head_ref == 'changeset-release/main' &&
-        github.base_ref == 'main' &&
-        github.event.pull_request.merged == true
+        github.event_name == 'release' && 
+        github.event.action == 'published'
       ) || (
         github.event.inputs.release == 'Production'
       )
