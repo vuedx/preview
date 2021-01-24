@@ -36,7 +36,8 @@
     "watch": "rollup -c -w",
     "test": "jest",
     "coverage": "jest --coverage",
-    "start": "node packages/preview/bin/preview.js packages/example"
+    "start": "node packages/preview/bin/preview.js packages/example",
+    "changeset": "changeset"
   },
   "husky": {
     "hooks": {
