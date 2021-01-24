@@ -54,4 +54,4 @@ jobs:
         with:
           tag_name: v${{ steps.timestamp.formattedTime }}
           release_name: Release v${{ steps.timestamp.formattedTime }}
-          body: ${{ event.pull_request.body }}
+          body: ${{ github.event.pull_request.body }}
