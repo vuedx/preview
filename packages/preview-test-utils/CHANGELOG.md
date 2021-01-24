@@ -1,5 +1,14 @@
 # @vuedx/preview-test-utils
 
+## 0.1.2
+
+### Patch Changes
+
+- 18a1b02: Bump version
+- Updated dependencies [18a1b02]
+  - @vuedx/preview-compiler@0.1.2
+  - @vuedx/preview-provider@0.1.2
+
 ## 0.1.1
 
 ### Patch Changes
