@@ -37,10 +37,7 @@ jobs:
   publish:
     name: Publish release
     runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'pull_request' &&
-      github.event.action == 'closed' &&
-      github.event.merged
+    if: github.event_name == 'pull_request'
     steps:
       - name: Get current time
         uses: 1466587594/get-current-time@v2
