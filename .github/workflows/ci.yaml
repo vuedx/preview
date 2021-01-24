@@ -115,6 +115,7 @@ jobs:
       - test
       - cancel
     if: |
+      github.event_name == 'push' ||
       github.event.inputs.release == 'Insiders'
     steps:
       - name: Checkout
