@@ -35,7 +35,7 @@
     "picomatch": "^2.2.2",
     "quick-lru": "^6.0.0",
     "sirv": "^1.0.10",
-    "vite": "2.0.0-beta.44",
+    "vite": "^2.3.6",
     "vue-docgen-api": "^4.34.2"
   }
 }

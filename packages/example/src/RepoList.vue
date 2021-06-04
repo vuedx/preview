@@ -25,13 +25,3 @@ export default defineComponent({
     </li>
   </ul>
 </template>
-
-<preview name="one repo">
-  <setup :requests="{
-    'https://api.github.com/users/znck/repos': [
-      {name: 'preview'},
-    ]
-  }" />
-
-  <RepoList />
-</preview>

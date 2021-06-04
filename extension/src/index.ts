@@ -48,7 +48,7 @@ export async function activate(context: vscode.ExtensionContext) {
     }
 
     const output = vscode.window.createOutputChannel(`Preview (${processes.size})`);
-    const instance = exec(`${bin} --port ${port}`, {
+    const instance = exec(`${bin} --force --port ${port}`, {
       cwd: rootDir,
       env: { ...process.env, CI: 'true' },
     });
@@ -129,6 +129,30 @@ export async function activate(context: vscode.ExtensionContext) {
         <iframe style="border: none;" width="100%" height="100%" src="${uri}"></iframe>
         `
       );
+    }),
+
+    vscode.commands.registerCommand('preview.open', async () => {
+      const editor = vscode.window.activeTextEditor;
+      if (editor == null) {
+        vscode.window.showErrorMessage('No active editor');
+        return;
+      }
+
+      const fileName = editor.document.fileName;
+      if (!fileName.endsWith('.vue')) {
+        vscode.window.showErrorMessage('Only .vue files are supported');
+        return;
+      }
+
+      const rootDir = findProjectDir(fileName);
+      const port = await getVitePort(rootDir);
+      const { instance, output } = await getViteInstance(bin, rootDir, port);
+      instance.stdin.write(JSON.stringify({ command: 'open', arguments: { fileName } }) + '\n');
+      const id = Path.relative(rootDir, fileName);
+      const uri = `http://localhost:${port}/sandbox?fileName=${encodeURIComponent(id)}`;
+      output.appendLine(`Preview File: "${fileName}"`);
+      output.appendLine(`URL: "${uri}"`);
+      vscode.env.openExternal(vscode.Uri.parse(uri));
     }),
 
     vscode.commands.registerCommand('preview.stop', async () => {

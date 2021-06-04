@@ -16,6 +16,7 @@ Commands:
 Options:
   --help, -h                 [boolean] show help
   --version, -v              [boolean] show version
+  --force, -f                [boolean] force dependency optimization
   --config, -c               [string]  use specified config file
   --port                     [number]  port to use for serve
   --open                     [boolean] open browser on server start
@@ -85,6 +86,7 @@ interface ServeArgs {
   root: string;
   base?: string;
   config?: string;
+  force?: boolean;
 }
 
 async function runServe(options: ServeArgs) {
@@ -95,6 +97,7 @@ async function runServe(options: ServeArgs) {
     server: {
       port: options.port,
       open: options.open,
+      force: options.force,
     },
     plugins: PreviewPlugin(),
     configFile: options.config,

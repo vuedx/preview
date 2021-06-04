@@ -17,6 +17,7 @@
   ],
   "activationEvents": [
     "onCommand:preview.show",
+    "onCommand:preview.open",
     "onCommand:preview.stop",
     "onLanguage:vue"
   ],
@@ -30,6 +31,13 @@
         "icon": "$(open-preview)"
       },
       {
+        "command": "preview.open",
+        "enablement": "resourceLangId == vue",
+        "title": "Open preview in browser",
+        "category": "Preview",
+        "icon": "$(browser)"
+      },
+      {
         "command": "preview.stop",
         "enablement": "preview:isViteStarted",
         "title": "Stop preview server",
@@ -41,6 +49,11 @@
         {
           "when": "resourceLangId == vue",
           "command": "preview.show",
+          "group": "navigation"
+        },
+        {
+          "when": "resourceLangId == vue",
+          "command": "preview.open",
           "group": "navigation"
         }
       ]
