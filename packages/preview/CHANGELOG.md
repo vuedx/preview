@@ -1,5 +1,11 @@
 # @vuedx/preview
 
+## 0.1.4
+
+### Patch Changes
+
+- 387878f: Update vite to version 2.x
+
 ## 0.1.3
 
 ### Patch Changes
