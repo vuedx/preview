@@ -1,5 +1,14 @@
 # preview
 
+## 0.2.0
+
+### Minor Changes
+
+- 387878f: Open preview in browser
+
+  - Add command to open preview in browser: `preview.open`
+  - Add editor title menu entry for `preview.open`
+
 ## 0.1.5
 
 ### Patch Changes
