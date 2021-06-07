@@ -141,6 +141,7 @@ jobs:
             packages/*/CHANGELOG.md
 
   check_release:
+    name: Check Release
     runs-on: ubuntu-latest
     needs: unit
     if: startsWith(github.event.head_commit.message, 'release:')
@@ -180,3 +181,4 @@ jobs:
             extension/CHANGELOG.md
             extension/preview.vsix
             packages/*/CHANGELOG.md
+
