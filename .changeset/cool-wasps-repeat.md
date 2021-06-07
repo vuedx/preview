@@ -1,6 +1,5 @@
 ---
 'preview': patch
-'example': patch
 '@vuedx/preview': patch
 '@vuedx/preview-compiler': patch
 '@vuedx/preview-provider': patch
