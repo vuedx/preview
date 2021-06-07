@@ -58,7 +58,6 @@ concurrency:
   group: build-${{ github.ref }}
   cancel-in-progress: ${{ !startsWith(github.event.head_commit.message, 'release:') }}
 
-
 jobs:
   build:
     name: Build
@@ -138,14 +137,20 @@ jobs:
             extension/preview.vsix
             packages/*/CHANGELOG.md
 
+  check_release:
+    runs-on: ubuntu-latest
+    needs: unit
+    if: startsWith(github.event.head_commit.message, 'release:')
+    steps:
+      - echo 'ok'
+
   release:
     name: Release
     runs-on: ubuntu-latest
-    if: startsWith(github.event.head_commit.message, 'release:')
     environment:
       name: Production
       url: https://marketplace.visualstudio.com/items?itemName=znck.preview
-    needs: unit
+    needs: check_release
     steps:
       - *setup
       - *download
