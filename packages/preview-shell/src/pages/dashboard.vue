@@ -22,8 +22,8 @@ export default defineComponent({
     const current = toRefs(props).fileName;
     const filters = reactive<Record<string, Record<string, boolean>>>({});
     const component = computed(() => {
-      const id = current?.value;
-      return id != null ? components.value.find((component) => component.id === id) : undefined;
+      const fileName = current?.value;
+      return fileName != null ? components.value.find((component) => component.path === fileName) : undefined;
     });
 
     function toggleFilter(componentId: string, previewId: number) {
@@ -37,7 +37,9 @@ export default defineComponent({
       return filters[componentId]?.[previewId] ?? true;
     }
 
-    function setCurrent(fileName: string) {
+    function setCurrent(id: string) {
+      const fileName = components.value.find((component) => component.id === id)?.path;
+
       router.push({ name: 'dashboard', query: { fileName } });
     }
 

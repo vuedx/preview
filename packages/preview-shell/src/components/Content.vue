@@ -9,7 +9,7 @@ export default defineComponent({
 
   setup(props) {
     const src = computed(
-      () => `/@preview:iframe/${props.relativeFileName}?index=${props.index ?? ''}`
+      () => `/@preview:component/app.html?fileName=${props.relativeFileName}&index=${props.index ?? ''}`
     );
 
     return { src };
@@ -18,5 +18,5 @@ export default defineComponent({
 </script>
 
 <template>
-  <iframe referrerpolicy="unsafe-url" style="border: none;" :src="src" width="100%" height="100%" />
+  <iframe referrerpolicy="unsafe-url" style="border: none" :src="src" width="100%" height="100%" />
 </template>

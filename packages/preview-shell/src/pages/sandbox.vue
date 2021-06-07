@@ -25,7 +25,6 @@ export default defineComponent({
           path: props.fileName,
           previews: [],
         };
-        console.log('Find', id, 'in', currentComponent.value);
       }
     };
 

@@ -1,5 +1,8 @@
 lockfileVersion: 5.3
 
+overrides:
+  vite: ^2.3.6
+
 importers:
 
   .:

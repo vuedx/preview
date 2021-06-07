@@ -1,8 +1,8 @@
 const start = Date.now();
 import * as chalk from 'chalk';
+import createDebugLogger from 'debug';
 import * as path from 'path';
 import { createServer } from 'vite';
-import createDebugLogger from 'debug';
 import { PreviewPlugin } from './plugin';
 
 const debug = createDebugLogger('preview:cli');
