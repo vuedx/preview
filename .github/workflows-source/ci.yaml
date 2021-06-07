@@ -111,6 +111,9 @@ jobs:
       name: Insiders
       url: https://marketplace.visualstudio.com/items?itemName=znck.preview-insiders
     needs: unit
+    concurrency:
+      group: insiders
+      cancel-in-progress: true
     steps:
       - *setup
       - *download
@@ -151,6 +154,9 @@ jobs:
       name: Production
       url: https://marketplace.visualstudio.com/items?itemName=znck.preview
     needs: check_release
+    concurrency:
+      group: release
+      cancel-in-progress: false
     steps:
       - *setup
       - *download
