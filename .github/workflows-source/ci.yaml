@@ -145,7 +145,7 @@ jobs:
     needs: unit
     if: startsWith(github.event.head_commit.message, 'release:')
     steps:
-      - echo 'ok'
+      - run: echo 'ok'
 
   release:
     name: Release

@@ -9,7 +9,7 @@ name: CI/CD
       - main
 concurrency:
   group: build-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  cancel-in-progress: ${{ !startsWith(github.event.head_commit.message, 'release:') }}
 jobs:
   build:
     name: Build
@@ -118,6 +118,9 @@ jobs:
       url: >-
         https://marketplace.visualstudio.com/items?itemName=znck.preview-insiders
     needs: unit
+    concurrency:
+      group: insiders
+      cancel-in-progress: true
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -178,14 +181,22 @@ jobs:
             extension/CHANGELOG.md
             extension/preview.vsix
             packages/*/CHANGELOG.md
+  check_release:
+    runs-on: ubuntu-latest
+    needs: unit
+    if: startsWith(github.event.head_commit.message, 'release:')
+    steps:
+      - run: echo 'ok'
   release:
     name: Release
     runs-on: ubuntu-latest
     environment:
       name: Production
-      url: >-
-        https://marketplace.visualstudio.com/items?itemName=znck.preview-insiders
-    needs: unit
+      url: https://marketplace.visualstudio.com/items?itemName=znck.preview
+    needs: check_release
+    concurrency:
+      group: release
+      cancel-in-progress: false
     steps:
       - name: Checkout
         uses: actions/checkout@v2
