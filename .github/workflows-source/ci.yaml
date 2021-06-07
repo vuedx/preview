@@ -142,7 +142,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: Production
-      url: https://marketplace.visualstudio.com/items?itemName=znck.preview-insiders
+      url: https://marketplace.visualstudio.com/items?itemName=znck.preview
     needs: unit
     steps:
       - *setup
