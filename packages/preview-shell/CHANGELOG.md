@@ -1,5 +1,11 @@
 # @vuedx/preview-shell
 
+## 0.1.3
+
+### Patch Changes
+
+- 1b39181: Bump all versions to test continuous release CI
+
 ## 0.1.2
 
 ### Patch Changes

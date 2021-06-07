@@ -1,5 +1,11 @@
 # preview
 
+## 0.2.1
+
+### Patch Changes
+
+- 1b39181: Bump all versions to test continuous release CI
+
 ## 0.2.0
 
 ### Minor Changes

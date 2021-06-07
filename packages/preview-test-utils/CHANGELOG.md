@@ -1,5 +1,14 @@
 # @vuedx/preview-test-utils
 
+## 0.1.3
+
+### Patch Changes
+
+- 1b39181: Bump all versions to test continuous release CI
+- Updated dependencies [1b39181]
+  - @vuedx/preview-compiler@0.1.3
+  - @vuedx/preview-provider@0.1.3
+
 ## 0.1.2
 
 ### Patch Changes

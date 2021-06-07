@@ -1,6 +1,6 @@
 {
   "name": "@vuedx/preview-test-utils",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "main": "dist/preview-test-utils.js",
   "module": "dist/preview-test-utils.esm.js",
   "types": "dist/preview-test-utils.d.ts",
