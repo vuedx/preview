@@ -1,26 +1,15 @@
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY) from ../workflows-source/ci.yaml
 name: CI/CD
-
-on:
-  workflow_dispatch:
-    inputs:
-      release:
-        required: false
-        description: Publish to Insiders/Production
-        default: 'Insiders'
+'on':
   pull_request:
     branches:
       - main
-  release:
-    types:
-      - published
   push:
-    paths-ignore:
-      - 'docs/**'
-      - '.github/**'
-      - '!.github/workflows/ci.yaml'
     branches:
       - main
-
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 jobs:
   build:
     name: Build
@@ -28,175 +17,226 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-
+      - name: Cache node packages
+        uses: actions/cache@v2
+        env:
+          cache-name: pnpm-modules
+        with:
+          key: >-
+            ${{ runner.os }}-build-${{ env.cache-name }}-${{
+            hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+          path: |
+            ~/.pnpm-store
+            ${{ github.workspace }}/.pnpm
       - name: Setup Node
-        uses: actions/setup-node@v2-beta
+        uses: actions/setup-node@v2
         with:
           node-version: '14'
-
       - name: Setup PNPM
-        uses: pnpm/action-setup@v1.2.1
+        uses: pnpm/action-setup@v2.0.1
         with:
-          version: 5.5.4
+          version: 6.2.5
           run_install: |
-            - args: [--frozen-lockfile, --silent]
-
+            - recursive: true
+              args: [--frozen-lockfile]
       - name: Build
         run: pnpm recursive run build
-
-      - name: Upload build artifacts
+      - name: Upload build artefact
         uses: actions/upload-artifact@v2
         with:
-          name: dist
+          name: build-artefact
+          retention-days: 30
           path: |
             ./packages/*/dist
             ./extension/dist
-          retention-days: 1
-
-  test:
-    name: Test Suite
+  unit:
     needs: build
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
-        node: ['12', '14']
+        os:
+          - ubuntu-latest
+          - windows-latest
+        node_version:
+          - '12'
+          - '14'
         include:
           - os: ubuntu-latest
             node: '14'
-            command: 'coverage'
-
+            command: coverage
     runs-on: ${{ matrix.os }}
+    name: Node ${{ matrix.node_version }} on ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-
+      - name: Cache node packages
+        uses: actions/cache@v2
+        env:
+          cache-name: pnpm-modules
+        with:
+          key: >-
+            ${{ runner.os }}-build-${{ env.cache-name }}-${{
+            hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+          path: |
+            ~/.pnpm-store
+            ${{ github.workspace }}/.pnpm
       - name: Setup Node
-        uses: actions/setup-node@v2-beta
+        uses: actions/setup-node@v2
         with:
-          node-version: ${{ matrix.node }}
-
+          node-version: ${{ matrix.node_version }}
       - name: Setup PNPM
-        uses: pnpm/action-setup@v1.2.1
+        uses: pnpm/action-setup@v2.0.1
         with:
-          version: 5.5.4
+          version: 6.2.5
           run_install: |
-            - args: [--frozen-lockfile, --silent]
-
-      - name: Download build artifacts
+            - recursive: true
+              args: [--frozen-lockfile]
+      - name: Download build artefact
         uses: actions/download-artifact@v2
         with:
-          name: dist
-
+          name: build-artefact
+          path: .
       - name: Test
         run: pnpm recursive run test -- --coverage
-
       - name: Collect coverage
         if: matrix.command == 'coverage'
         uses: codecov/codecov-action@v1
         with:
           file: ./coverage/coverage-final.json
-
-
-  cancel:
-    name: Cancel Release
-    runs-on: ubuntu-20.04
-    needs: test
-    steps:
-      - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.4.1
-        with:
-          access_token: ${{ github.token }}
-
   insiders:
     name: Insiders Release
     runs-on: ubuntu-latest
-    environment: Insiders
-    needs:
-      - test
-      - cancel
-    if: |
-      github.event_name == 'push' ||
-      github.event.inputs.release == 'Insiders'
+    environment:
+      name: Insiders
+      url: >-
+        https://marketplace.visualstudio.com/items?itemName=znck.preview-insiders
+    needs: unit
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-
+      - name: Cache node packages
+        uses: actions/cache@v2
+        env:
+          cache-name: pnpm-modules
+        with:
+          key: >-
+            ${{ runner.os }}-build-${{ env.cache-name }}-${{
+            hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+          path: |
+            ~/.pnpm-store
+            ${{ github.workspace }}/.pnpm
       - name: Setup Node
-        uses: actions/setup-node@v2-beta
+        uses: actions/setup-node@v2
         with:
-          node-version: '14.14.0'
-
+          node-version: '14'
       - name: Setup PNPM
-        uses: pnpm/action-setup@v1.2.1
+        uses: pnpm/action-setup@v2.0.1
         with:
-          version: 5.5.4
+          version: 6.2.5
           run_install: |
-            - args: [--frozen-lockfile, --silent]
-
-      - name: Download build artifacts
+            - recursive: true
+              args: [--frozen-lockfile]
+      - name: Download build artefact
         uses: actions/download-artifact@v2
         with:
-          name: dist
-
+          name: build-artefact
+          path: .
       - name: Publish Insiders Extension
         run: |
           pnpm recursive --filter ./extension run release
         env:
           RELEASE_CHANNEL: insiders
           VSCODE_MARKETPLACE_TOKEN: ${{ secrets.VSCODE_MARKETPLACE_TOKEN }}
-
       - name: Publish Insiders Packages
-        run: |
+        run: >
           echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' > .npmrc
-          pnpm recursive --filter ./packages exec -- npm version prerelease --preid=insiders-$(date +%s)
-          pnpm recursive --filter ./packages publish --tag insiders --access public --no-git-checks
+
+          pnpm recursive --filter ./packages exec -- npm version prerelease
+          --preid=insiders-$(date +%s)
+
+          pnpm recursive --filter ./packages publish --tag insiders --access
+          public --no-git-checks
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
+      - uses: marvinpinto/action-automatic-releases@latest
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          automatic_release_tag: insiders
+          prerelease: true
+          files: |
+            extension/CHANGELOG.md
+            extension/preview.vsix
+            packages/*/CHANGELOG.md
   release:
     name: Release
     runs-on: ubuntu-latest
-    environment: Production
-    needs:
-      - test
-      - cancel
-    if: |
-      (
-        github.event_name == 'release' && 
-        github.event.action == 'published'
-      ) || (
-        github.event.inputs.release == 'Production'
-      )
+    environment:
+      name: Production
+      url: >-
+        https://marketplace.visualstudio.com/items?itemName=znck.preview-insiders
+    needs: unit
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-
+      - name: Cache node packages
+        uses: actions/cache@v2
+        env:
+          cache-name: pnpm-modules
+        with:
+          key: >-
+            ${{ runner.os }}-build-${{ env.cache-name }}-${{
+            hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+          path: |
+            ~/.pnpm-store
+            ${{ github.workspace }}/.pnpm
       - name: Setup Node
-        uses: actions/setup-node@v2-beta
+        uses: actions/setup-node@v2
         with:
-          node-version: '14.14.0'
-
+          node-version: '14'
       - name: Setup PNPM
-        uses: pnpm/action-setup@v1.2.1
+        uses: pnpm/action-setup@v2.0.1
         with:
-          version: 5.5.4
+          version: 6.2.5
           run_install: |
-            - args: [--frozen-lockfile, --silent]
-
-      - name: Download build artifacts
+            - recursive: true
+              args: [--frozen-lockfile]
+      - name: Download build artefact
         uses: actions/download-artifact@v2
         with:
-          name: dist
-
+          name: build-artefact
+          path: .
       - name: Publish Extension
         run: |
           pnpm recursive --filter ./extension run release
         env:
           VSCODE_MARKETPLACE_TOKEN: ${{ secrets.VSCODE_MARKETPLACE_TOKEN }}
-
       - name: Publish Packages
         run: |
           echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' > .npmrc
-          pnpm recursive publish --tag latest --access public --no-git-checks
+          pnpm recursive publish --tag latest --access public
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - uses: marvinpinto/action-automatic-releases@latest
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          automatic_release_tag: latest
+          prerelease: true
+          files: |
+            extension/CHANGELOG.md
+            extension/preview.vsix
+            packages/*/CHANGELOG.md

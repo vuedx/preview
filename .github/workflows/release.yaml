@@ -14,7 +14,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         with:
-          # This makes Actions fetch all Git history so that Changesets can generate changelogs with the correct commits
           fetch-depth: 0
 
       - name: Setup Node
@@ -34,21 +33,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  publish:
-    name: Publish release
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    steps:
-      - name: Get current time
-        uses: 1466587594/get-current-time@v2
-        id: timestamp
-        with:
-          format: YYYY.MM.DD-HH.mm.ss
-      - name: 'Create Release'
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ steps.timestamp.formattedTime }}
-          release_name: Release v${{ steps.timestamp.formattedTime }}
-          body: ${{ github.event.pull_request.body }}
