@@ -1,5 +1,12 @@
 # @vuedx/preview
 
+## 0.1.6
+
+### Patch Changes
+
+- Updated dependencies [83e89e5]
+  - @vuedx/preview-shell@0.1.4
+
 ## 0.1.5
 
 ### Patch Changes

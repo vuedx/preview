@@ -1,5 +1,16 @@
 # preview
 
+## 0.2.4
+
+### Patch Changes
+
+- 83e89e5: Use consistent virtual resource scheme
+
+  - Use `@preview:component/${type}.${ext}` for component scoped resources
+  - Use `@preview:shell/` for proxying pre-built shell application
+  - Use `@preview:components.js` for component index
+  - Use `@preview:user/setup.js` for custom runtime setup file
+
 ## 0.2.1
 
 ### Patch Changes

@@ -1,5 +1,16 @@
 # @vuedx/preview-shell
 
+## 0.1.4
+
+### Patch Changes
+
+- 83e89e5: Use consistent virtual resource scheme
+
+  - Use `@preview:component/${type}.${ext}` for component scoped resources
+  - Use `@preview:shell/` for proxying pre-built shell application
+  - Use `@preview:components.js` for component index
+  - Use `@preview:user/setup.js` for custom runtime setup file
+
 ## 0.1.3
 
 ### Patch Changes
