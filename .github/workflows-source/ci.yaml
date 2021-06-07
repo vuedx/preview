@@ -56,7 +56,8 @@ on:
 
 concurrency:
   group: build-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  cancel-in-progress: ${{ !startsWith(github.event.head_commit.message, 'release:') }}
+
 
 jobs:
   build:
@@ -140,6 +141,7 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
+    if: startsWith(github.event.head_commit.message, 'release:')
     environment:
       name: Production
       url: https://marketplace.visualstudio.com/items?itemName=znck.preview
