@@ -3,7 +3,7 @@ import { generatePreviewComponent } from '../src/transform';
 
 describe('transform()', () => {
   function abs(fileName: string): string {
-    return Path.toNamespacedPath(Path.resolve(__dirname, fileName));
+    return Path.resolve(__dirname, fileName).replace(/\\/g, '/');
   }
   it('should get <preview> block as module factory', () => {
     expect(generatePreviewComponent(abs('fixture/Example.vue'), 'example preview block'))
