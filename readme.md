@@ -6,7 +6,7 @@
   <tr>
   <td align="center">
     <a href="https://marketplace.visualstudio.com/items?itemName=znck.vue-language-features">
-      <img src="./extensions/vscode-vue-language-features/logo.png" width="96" />
+      <img src="https://github.com/znck/vue-developer-experience/raw/main/extensions/vscode-vue-language-features/logo.png" width="96" />
     </a>
     <h3>
       <a href="https://marketplace.visualstudio.com/items?itemName=znck.vue-language-features">Language Features</a>
@@ -16,7 +16,7 @@
 
   <td align="center">
     <a href="https://github.com/znck/preview">
-      <img src="./assets/preview.png" width="96" />
+      <img src="./extension/logo.png" width="96" />
     </a>
     <h3>
       <a href="https://github.com/znck/preview">Preview</a>
@@ -25,7 +25,7 @@
 
   <td align="center">
     <a href="https://marketplace.visualstudio.com/items?itemName=znck.vue">
-      <img src="./extensions/vscode-vue/logo.png" width="96" />
+      <img src="https://github.com/znck/vue-developer-experience/raw/main/extensions/vscode-vue/logo.png" width="96" />
     </a>
     <h3>
       <a href="https://marketplace.visualstudio.com/items?itemName=znck.vue">Syntax Highlight</a>
