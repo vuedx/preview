@@ -3,7 +3,7 @@ import { generatePreviewComponent } from '../src/transform';
 
 describe('transform()', () => {
   function abs(fileName: string): string {
-    return Path.resolve(__dirname, fileName).replace(/\\/g, '/');
+    return Path.resolve(__dirname, fileName);
   }
   it('should get <preview> block as module factory', () => {
     expect(generatePreviewComponent(abs('fixture/Example.vue'), 'example preview block'))
@@ -20,7 +20,10 @@ describe('transform()', () => {
 
       var _previewProvider = require(\\"@vuedx/preview-provider\\");
 
-      var _Example = _interopRequireDefault(require(\\"${abs('fixture/Example.vue')}\\"));
+      var _Example = _interopRequireDefault(require(\\"${abs('fixture/Example.vue').replace(
+        /\\/g,
+        '/'
+      )}\\"));
 
       function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
