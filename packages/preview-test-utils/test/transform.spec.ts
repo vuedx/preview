@@ -43,7 +43,7 @@ describe('transform()', () => {
             state: (0, _vue.reactive)(overrides.state != null ? overrides.state : {
               foo: 1
             }),
-            x: (0, _vue.inject)('@preview:UserProviders', null)
+            x: (0, _vue.inject)('preview:UserProviders', null)
           };
           (0, _previewProvider.useRequests)({ ...{},
             ...overrides.requests

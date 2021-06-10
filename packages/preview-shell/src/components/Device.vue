@@ -17,7 +17,7 @@ export default defineComponent({
   setup(props) {
     const device = computed(() => devices[props.name]);
 
-    return { device };
+    return { device, devices };
   },
 });
 </script>
@@ -31,5 +31,9 @@ export default defineComponent({
       <slot />
     </ConfiguredDevice>
   </template>
-  <div v-else>Unsupported device: {{ name }}</div>
+  <div v-else>
+    Error: Unsupported device: {{ name }}
+
+    <pre>Configured Devices: {{ Array.from(Object.keys(devices)) }}</pre>
+  </div>
 </template>

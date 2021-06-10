@@ -9,7 +9,7 @@ export default defineComponent({
 
   setup(props) {
     const src = computed(
-      () => `/@preview:component/app.html?fileName=${props.relativeFileName}&index=${props.index ?? ''}`
+      () => `/@preview:iframe/${props.relativeFileName}?index=${props.index ?? ''}`
     );
 
     return { src };

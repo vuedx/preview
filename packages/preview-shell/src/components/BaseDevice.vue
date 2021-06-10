@@ -51,6 +51,20 @@ export default defineComponent({
   background-color: #030309;
 }
 
+@media (prefers-color-scheme: light) {
+  .screen {
+    background-color: #fff;
+  }
+}
+
+[color-scheme='dark'] .screen {
+  background-color: #030309;
+}
+
+[color-scheme='light'] .screen {
+  background-color: #fff;
+}
+
 .fit-content {
   display: inline-block;
   width: -moz-fit-content;

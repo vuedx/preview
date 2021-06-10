@@ -131,7 +131,7 @@ export class ComponentMetadataStore {
     
     function setComponents(components) {
       window.components = components
-      window.dispatchEvent(new CustomEvent('@preview:components', { detail: components }))
+      window.dispatchEvent(new CustomEvent('preview:components', { detail: components }))
     }
     
     setComponents(components)

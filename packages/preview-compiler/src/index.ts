@@ -43,12 +43,13 @@ function createPreviewSetupTransform(output: SetupOutput): NodeTransform {
 export interface CompileOptions {
   componentFileName: string;
   allowOverrides?: boolean | string;
+  attrs?: Record<string, string | boolean>;
   hmrId?: string;
 }
 
 export function compile(
   content: string,
-  { componentFileName, hmrId, allowOverrides }: CompileOptions
+  { componentFileName, hmrId, allowOverrides, attrs = {} }: CompileOptions
 ): string {
   const setup: SetupOutput = {
     components: '{}',
@@ -63,7 +64,7 @@ export function compile(
     cacheHandlers: true,
     nodeTransforms: [createPreviewSetupTransform(setup)],
   });
-  const componentName = (componentFileName.split(Path.sep).pop()??'self').replace(/\.vue$/, '');
+  const componentName = (componentFileName.split(Path.sep).pop() ?? 'self').replace(/\.vue$/, '');
 
   const preamble = getCode(
     result.preamble,
@@ -79,9 +80,10 @@ export function compile(
   components: { "${componentName}": _component_self },
   setup() {
     const preview = { 
-      ...provider, 
+      ...provider,
+      attrs: ${JSON.stringify(attrs)}, 
       state: reactive(overrides.state != null ? overrides.state : ${setup.state}), 
-      x: inject('@preview:UserProviders', null),
+      x: inject('preview:UserProviders', null),
     }
   
     useRequests({ ...(${setup.requests}), ...overrides.requests })

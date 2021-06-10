@@ -1,7 +1,8 @@
-import { SFCBlock } from '@vuedx/compiler-sfc';
+import { SFCBlock, SFCDescriptor } from '@vuedx/compiler-sfc';
 import glob from 'fast-glob';
 import FS from 'fs';
 import Path from 'path';
+import sirv from 'sirv';
 import { ModuleNode, Plugin, send } from 'vite';
 import {
   genEntryHTML,
@@ -9,19 +10,19 @@ import {
   genPreviewIFrameContent,
   genVSCodeKeyboardEventSupport,
 } from './generators';
-import sirv from 'sirv';
 import { ComponentMetadataStore } from './store/ComponentMetadataStore';
 import { DescriptorStore } from './store/DescriptorStore';
 import { PreviewCompilerStore } from './store/PreviewCompilerStore';
 import { getComponentName, getPreviewShellPath, getPropValue, getProviderPath } from './utils';
 import {
-  ComponentScopedResourceType,
-  InternalResoruceType,
-  isVirtualResource,
-  parseVirtualResourceURI,
-  PrefixedResourceType,
+  ComponentResourceType,
+  IFRAME_PREFIX,
+  parsePreviewResource,
+  parseURI,
+  resourceToFile,
   resourceToID,
-  resourceToURI,
+  ResourceType,
+  SHELL_PREFIX,
 } from './virtual-resource';
 
 function PreviewPlugin(): Plugin[] {
@@ -37,6 +38,137 @@ function PreviewPlugin(): Plugin[] {
       name: 'preview:pre',
       enforce: 'pre',
 
+      async configureServer(server) {
+        const serve = sirv(shellBasePath, { dev: true, etag: true, extensions: [] });
+        server.middlewares.use(async (req, res, next) => {
+          if (req.method === 'GET' && req.url != null) {
+            if (req.url.startsWith(SHELL_PREFIX)) {
+              req.url = req.url.substr(SHELL_PREFIX.length + 1);
+
+              return serve(req, res, next);
+            }
+
+            if (req.url.startsWith(IFRAME_PREFIX)) {
+              const { fileName, query } = parseURI(req.url.substr(IFRAME_PREFIX.length + 1));
+              const html = genPreviewIFrameContent(store.root, {
+                fileName: Path.resolve(store.root, fileName),
+                index:
+                  typeof query.index === 'string' && query.index.length > 0
+                    ? parseInt(query.index)
+                    : undefined,
+              });
+
+              return send(req, res, html, 'html');
+            }
+          }
+
+          return next();
+        });
+      },
+    },
+    {
+      name: 'preview',
+      async handleHotUpdate({ file, modules: mods, read, server, timestamp }) {
+        if (file.endsWith('.vue')) {
+          const affectedModules = new Set<ModuleNode | null | undefined>(
+            mods.filter((mod) => {
+              if (mod.id != null) return !/\?vue&type=preview/.test(mod.id);
+              return true;
+            })
+          );
+
+          const content = await read();
+
+          const prevDescriptor = descriptors.get(file);
+          const prevPreviews = getPreviewsBlocks(prevDescriptor);
+          const nextDescriptor = descriptors.set(file, content);
+          const nextPreviews = getPreviewsBlocks(nextDescriptor);
+
+          const base = resourceToID({
+            type: ComponentResourceType.COMPONENT,
+            fileName: Path.relative(server.config.root, file),
+          });
+
+          if (nextPreviews.length > 0) {
+            const m = await server.moduleGraph.getModuleByUrl(base);
+            if (m != null) server.moduleGraph.invalidateModule(m);
+          }
+
+          const added = new Set<number | undefined>();
+          const removed = new Set<number | undefined>();
+          const updated = new Set<number>();
+          const unchanged = new Set<number>();
+
+          for (let i = 0; i < Math.max(prevPreviews.length, nextPreviews.length); ++i) {
+            const prev = prevPreviews[i];
+            const next = nextPreviews[i];
+
+            if (prev != null && next != null) {
+              if (prev.content !== next.content) updated.add(i);
+              else unchanged.add(i);
+            } else if (next !== null) {
+              added.add(i);
+            } else if (prev != null) {
+              removed.add(i);
+            }
+          }
+
+          const prevIndexContent = store.getText();
+          store.reload(file, content);
+          const nextIndexContent = store.getText();
+          const ids = new Set<string>();
+          if (prevIndexContent !== nextIndexContent) {
+            ids.add(ResourceType.LIST_COMPONENTS);
+          }
+
+          const prevCount = prevPreviews.filter((block) => block != null).length;
+          const nextCount = nextPreviews.filter((block) => block != null).length;
+
+          if (nextCount > 0 && prevCount == 0) {
+            removed.add(undefined);
+          } else if (prevCount == 0 && nextCount > 0) {
+            added.add(undefined);
+          }
+
+          const fileName = Path.relative(store.root, file);
+
+          updated.forEach((index) => {
+            ids.add(
+              resourceToID({
+                type: ComponentResourceType.COMPONENT,
+                fileName,
+                index,
+              })
+            );
+          });
+
+          removed.forEach((index) => {
+            ids.add(
+              resourceToID({
+                type: ComponentResourceType.COMPONENT,
+                fileName,
+                index,
+              })
+            );
+          });
+
+          const modules = await Promise.all(
+            Array.from(ids).map(
+              async (id) =>
+                server.moduleGraph.getModuleById(id) ?? server.moduleGraph.getModuleByUrl(`/${id}`)
+            )
+          );
+
+          modules.forEach((m) => {
+            if (m != null) {
+              affectedModules.add(m);
+            }
+          });
+
+          return Array.from(affectedModules).filter((m): m is ModuleNode => m != null);
+        }
+      },
+
       configResolved(config) {
         store = new ComponentMetadataStore(config.root, descriptors);
         compiler = new PreviewCompilerStore(descriptors);
@@ -47,26 +179,52 @@ function PreviewPlugin(): Plugin[] {
           return providerPath;
         }
 
-        if (!isVirtualResource(id)) return;
-        const resource = parseVirtualResourceURI(id);
-
-        if (resource.type === PrefixedResourceType.SHELL) {
-          return Path.resolve(shellBasePath, resource.fileName);
+        if (id === ResourceType.LIST_COMPONENTS) {
+          return `/${ResourceType.LIST_COMPONENTS}`;
         }
 
-        return resourceToID(resource);
+        if (id === ResourceType.USER_SETUP) {
+          return `/${ResourceType.USER_SETUP}`;
+        }
+
+        const resource = parsePreviewResource(id);
+        if (resource != null) {
+          return resourceToFile(resource);
+        }
       },
 
       load(id) {
-        if (!isVirtualResource(id)) return;
-        const resource = parseVirtualResourceURI(id);
+        switch (id) {
+          case `/${ResourceType.USER_SETUP}`: {
+            return setupFile != null
+              ? [
+                  `import * as preview from '${setupFile}'`,
+                  `import * as vue from 'vue'`,
+                  ``,
+                  `export const createApp = preview.createApp ?? vue.createApp`,
+                  `export const x = preview.x ?? {}`,
+                ].join('\n')
+              : [
+                  `import * as vue from 'vue'`,
+                  ``,
+                  `export const createApp = vue.createApp`,
+                  `export const x = {}`,
+                ].join('\n');
+          }
 
+          case `/${ResourceType.LIST_COMPONENTS}`: {
+            return store.getText();
+          }
+        }
+
+        const resource = parsePreviewResource(id);
+        if (resource == null) return;
         switch (resource.type) {
-          case ComponentScopedResourceType.COMPONENT_META: {
+          case ComponentResourceType.META: {
             return `export default ${JSON.stringify(store.get(resource.fileName), null, 2)}`;
           }
 
-          case ComponentScopedResourceType.COMPONENT_INSTANCE: {
+          case ComponentResourceType.COMPONENT: {
             if (resource.index == null) {
               const { info } = store.get(resource.fileName);
               const componentName = getComponentName(resource.fileName);
@@ -88,33 +246,12 @@ function PreviewPlugin(): Plugin[] {
             }
           }
 
-          case ComponentScopedResourceType.COMPONENT_APP: {
-            return genPreviewAppEntryScript(resource);
-          }
-
-          case ComponentScopedResourceType.COMPONENT_HTML_PAGE: {
-            return genPreviewIFrameContent(resource);
-          }
-
-          case InternalResoruceType.USER_SETUP: {
-            return setupFile != null
-              ? [
-                  `import * as preview from '${setupFile}'`,
-                  `import * as vue from 'vue'`,
-                  ``,
-                  `export const createApp = preview.createApp ?? vue.createApp`,
-                  `export const x = preview.x ?? {}`,
-                ].join('\n')
-              : [
-                  `import * as vue from 'vue'`,
-                  ``,
-                  `export const createApp = vue.createApp`,
-                  `export const x = {}`,
-                ].join('\n');
-          }
-
-          case InternalResoruceType.LIST_COMPONENTS: {
-            return store.getText();
+          case ComponentResourceType.ENTRY: {
+            return genPreviewAppEntryScript(
+              store.root,
+              resource,
+              descriptors.get(Path.resolve(store.root, resource.fileName))
+            );
           }
         }
       },
@@ -136,8 +273,8 @@ function PreviewPlugin(): Plugin[] {
               tag: 'script',
               attrs: {
                 type: 'module',
-                src: resourceToURI({ type: InternalResoruceType.LIST_COMPONENTS }),
               },
+              children: `import '/${ResourceType.LIST_COMPONENTS}'`,
               injectTo: 'body',
             },
 
@@ -150,95 +287,10 @@ function PreviewPlugin(): Plugin[] {
         },
       },
 
-      async configureServer(server) {
-        const serve = sirv(shellBasePath, { dev: true, etag: true, extensions: [] });
-        server.middlewares.use(async (req, res, next) => {
-          if (req.method === 'GET' && req.url != null) {
-            if (isVirtualResource(req.url)) {
-              const resource = parseVirtualResourceURI(req.url);
-              if (resource.type === ComponentScopedResourceType.COMPONENT_HTML_PAGE) {
-                const html = genPreviewIFrameContent(resource);
-
-                return send(req, res, html, 'html');
-              }
-
-              if (resource.type === PrefixedResourceType.SHELL) {
-                req.url = resource.fileName;
-
-                return serve(req, res, next);
-              }
-            }
-          }
-
-          return next();
-        });
-      },
-    },
-    {
-      name: 'preview:post',
-      enforce: 'post',
-      async handleHotUpdate({ file, modules: mods, read, server }) {
-        if (file.endsWith('.vue')) {
-          const affectedModules = new Set<ModuleNode>(mods);
-
-          const content = await read();
-          const prevDescriptor = descriptors.get(file);
-          interface PreviewBlockWithIndex {
-            block: SFCBlock;
-            index: number;
-          }
-
-          const prevPreviews: Array<PreviewBlockWithIndex> = prevDescriptor.customBlocks
-            .map((block: SFCBlock, index: number): PreviewBlockWithIndex => ({ index, block }))
-            .filter(({ block }: PreviewBlockWithIndex) => block.type === 'preview');
-
-          const nextDescriptor = descriptors.set(file, content);
-          const nextPreviews: Array<{
-            block: SFCBlock;
-            index: number;
-          }> = nextDescriptor.customBlocks
-            .map((block: SFCBlock, index: number): PreviewBlockWithIndex => ({ index, block }))
-            .filter(({ block }: PreviewBlockWithIndex) => block.type === 'preview');
-
-          const id = resourceToURI({
-            type: ComponentScopedResourceType.COMPONENT_INSTANCE,
-            fileName: Path.relative(server.config.root, file),
-          });
-          nextPreviews.forEach((a, index) => {
-            const b = prevPreviews[index];
-
-            if (b == null) return;
-            if (a.block.content !== b.block.content || a.index !== b.index) {
-              const prev = server.moduleGraph.getModuleById(`${id}${b.index}`);
-              const next = server.moduleGraph.getModuleById(`${id}${a.index}`);
-
-              if (prev != null) affectedModules.add(prev);
-              if (next != null) affectedModules.add(next);
-            }
-          });
-          if (prevPreviews.length === 0) {
-            const prev = server.moduleGraph.getModuleById(id);
-            if (prev != null) affectedModules.add(prev);
-          }
-
-          const prevContent = store.getText();
-          store.reload(file, content);
-          const nextContent = store.getText();
-          if (prevContent !== nextContent) {
-            const indexModule = server.moduleGraph.getModuleById(
-              resourceToID({ type: InternalResoruceType.LIST_COMPONENTS })
-            );
-            if (indexModule != null) affectedModules.add(indexModule);
-          }
-
-          return Array.from(affectedModules);
-        }
-      },
-
       transform(_, id) {
         if (/\?vue&type=preview/.test(id)) {
           return {
-            code: `export default null`,
+            code: `export default null; `,
           };
         }
       },
@@ -252,19 +304,11 @@ function PreviewPlugin(): Plugin[] {
         setupFile = file;
 
         server.watcher.on('all', async (event, fileName) => {
-          const timestamp = Date.now();
           if (setupFiles.has(fileName)) {
             setupFile = fileName;
+            // TODO: Invalidate setup file
             server.ws.send({
-              type: 'update',
-              updates: [
-                {
-                  type: 'js-update',
-                  path: resourceToURI({ type: InternalResoruceType.USER_SETUP }),
-                  acceptedPath: resourceToURI({ type: InternalResoruceType.USER_SETUP }),
-                  timestamp,
-                },
-              ],
+              type: 'full-reload',
             });
           } else if (store.isSupported(fileName)) {
             if (event === 'unlink') {
@@ -277,7 +321,9 @@ function PreviewPlugin(): Plugin[] {
 
         server.middlewares.use(async function ServePreviewShell(req, res, next) {
           if (req.method === 'GET' && req.url != null) {
-            if (/^\/(|sandbox)\/?(\?.*)?$/.test(req.url)) {
+            // Serve all shell pages.
+            const path = req.url.replace(/\?.*$/, '');
+            if (/^\/(|sandbox)\/?(\?.*)?$/.test(path)) {
               return send(req, res, indexHtmlContent, 'html');
             }
           }
@@ -315,4 +361,10 @@ async function loadVueFiles(root: string, store: ComponentMetadataStore): Promis
       })
     );
   });
+}
+
+function getPreviewsBlocks(descriptor: SFCDescriptor): Array<SFCBlock | null> {
+  return descriptor.customBlocks.map((block: SFCBlock) =>
+    block.type === 'preview' ? block : null
+  );
 }

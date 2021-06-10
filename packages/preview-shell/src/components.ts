@@ -16,7 +16,7 @@ export interface ComponentMetadata {
 
 export const components = ref<ComponentMetadata[]>((window as any).components ?? []);
 
-window.addEventListener('@preview:components' as any, (event: CustomEvent<ComponentMetadata[]>) => {
+window.addEventListener('preview:components' as any, (event: CustomEvent<ComponentMetadata[]>) => {
   components.value = event.detail;
 });
 

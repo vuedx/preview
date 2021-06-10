@@ -1,5 +1,6 @@
 const vuePlugin = require('@vitejs/plugin-vue').default;
 
 module.exports = /** @type {import('vite').UserConfig} */ ({
-  plugins: [vuePlugin({ exclude: /@preview/ })],
+  plugins: [vuePlugin()],
+  clearScreen: false,
 });

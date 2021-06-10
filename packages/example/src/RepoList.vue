@@ -3,9 +3,7 @@ import { ref, defineComponent } from 'vue';
 
 export default defineComponent({
   setup() {
-    const repos = ref(
-      /** @type {Array<{ name: string }>} */ ([])
-    );
+    const repos = ref(/** @type {Array<{ name: string }>} */ ([]));
 
     fetch('https://api.github.com/users/znck/repos')
       .then((response) => response.json())
@@ -32,6 +30,5 @@ export default defineComponent({
       {name: 'preview'},
     ]
   }" />
-
   <RepoList />
 </preview>

@@ -77,7 +77,7 @@ export function generatePreviewComponent(
         `    : _vue.createApp`,
         `  const app = createApp(component)`,
         `  if (_preview.x != null) {`,
-        `    app.provide('@preview:UserProviders', _preview.x)`,
+        `    app.provide('preview:UserProviders', _preview.x)`,
         `  }`,
         `  return app`,
         `}`,

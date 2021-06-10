@@ -3,7 +3,10 @@
   "version": "0.1.3",
   "main": "dist/preview-compiler.js",
   "module": "dist/preview-compiler.esm.js",
-  "types": "dist/preview-compiler.d.ts",
+  "types": "src/index.ts",
+  "publishConfig": {
+    "types": "dist/preview-compiler.d.ts"
+  },
   "files": [
     "dist"
   ],
