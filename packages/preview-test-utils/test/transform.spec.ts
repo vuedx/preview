@@ -20,7 +20,7 @@ describe('transform()', () => {
 
       var _previewProvider = require(\\"@vuedx/preview-provider\\");
 
-      var _Example = _interopRequireDefault(require(\\"/Users/znck/Workspace/znck/preview/packages/preview-test-utils/test/fixture/Example.vue\\"));
+      var _Example = _interopRequireDefault(require(\\"${abs('fixture/Example.vue')}\\"));
 
       function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
