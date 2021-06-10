@@ -1,5 +1,16 @@
 # @vuedx/preview-test-utils
 
+## 0.2.0
+
+### Minor Changes
+
+- b03452d: Add HMR support
+
+### Patch Changes
+
+- Updated dependencies [b03452d]
+  - @vuedx/preview-compiler@0.2.0
+
 ## 0.1.3
 
 ### Patch Changes

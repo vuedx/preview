@@ -1,5 +1,11 @@
 # @vuedx/preview-shell
 
+## 0.2.0
+
+### Minor Changes
+
+- b03452d: Add HMR support
+
 ## 0.1.4
 
 ### Patch Changes
