@@ -1,5 +1,11 @@
 # @vuedx/preview-provider
 
+## 0.1.4
+
+### Patch Changes
+
+- b0eea6a: Build using @vuedx/monorepo-tools
+
 ## 0.1.3
 
 ### Patch Changes

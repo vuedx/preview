@@ -1,5 +1,21 @@
 # preview
 
+## 0.3.0
+
+### Minor Changes
+
+- b0eea6a: New commands
+
+  - `preview.showSource` — Open source .vue file from preview panel
+  - `preview.update` — Update `@vuedx/preview` package
+  - `preview.refresh` - Refresh preview panel
+
+- b0eea6a: Move "open preview in browser" to `editor/title/context` menu
+
+### Patch Changes
+
+- b0eea6a: Build using @vuedx/monorepo-tools
+
 ## 0.2.4
 
 ### Patch Changes
