@@ -8,6 +8,9 @@
   "files": [
     "dist"
   ],
+  "buildConfig": {
+    "useMain": false
+  },
   "dependencies": {
     "vue": "^3.0.5",
     "vue-router": "^4.0.2"

@@ -3,12 +3,26 @@
   "version": "0.2.0",
   "description": "Component preview tool for rapid development.",
   "main": "dist/preview.js",
+  "module": "dist/preview.mjs",
+  "types": "srs/plugin.ts",
+  "bin": "bin/preview.js",
+  "publishConfig": {
+    "types": "dist/preview.d.ts"
+  },
+  "buildConfig": {
+    "sources": {
+      "src/cli.ts": [
+        {
+          "format": "commonjs",
+          "file": "dist/cli.js"
+        }
+      ]
+    }
+  },
   "files": [
     "bin",
-    "dist",
-    "browser"
+    "dist"
   ],
-  "bin": "bin/preview.js",
   "scripts": {},
   "keywords": [
     "vue",

@@ -1,8 +1,7 @@
-import { App, ComponentPublicInstance } from 'vue';
-import { SetupOptions } from '@vuedx/preview-provider';
+import type { SetupOptions } from '@vuedx/preview-provider';
 import { Module } from 'module';
-import Path from 'path';
 import vm from 'vm';
+import type { App, ComponentPublicInstance } from 'vue';
 import { generatePreviewComponent } from './transform';
 
 type PreviewFactory<T = ComponentPublicInstance> = (overrides: Partial<SetupOptions>) => T;
@@ -37,7 +36,7 @@ function compileAsApp(fileName: string, previewName: string): PreviewFactoryModu
 
 const executions: Record<string, PreviewFactory<any>> = {};
 function doExecute<T>(id: string, fn: PreviewFactoryModule<T>): PreviewFactory<T> {
-  if (executions[id] != null) return executions[id];
+  if (executions[id] != null) return executions[id] as PreviewFactory<T>;
   const context = { exports: {} as any }; // exports.default would be set in the preview module.
   const prevExports = module.exports;
 

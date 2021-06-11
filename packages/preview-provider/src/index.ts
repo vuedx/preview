@@ -1,3 +1,4 @@
+// @ts-ignore - export * is not supported from rollup-plugin-dts
 import type { Component } from 'vue';
 import { useComponents } from './components';
 import { useRequests, installFetchInterceptor, RequestOptions } from './fetch';

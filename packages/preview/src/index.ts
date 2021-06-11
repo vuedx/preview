@@ -1,4 +1,4 @@
-import { SFCBlock, SFCDescriptor } from '@vuedx/compiler-sfc';
+import type { SFCBlock, SFCDescriptor } from '@vuedx/compiler-sfc';
 import glob from 'fast-glob';
 import FS from 'fs';
 import Path from 'path';
@@ -53,8 +53,8 @@ function PreviewPlugin(): Plugin[] {
               const html = genPreviewIFrameContent(store.root, {
                 fileName: Path.resolve(store.root, fileName),
                 index:
-                  typeof query.index === 'string' && query.index.length > 0
-                    ? parseInt(query.index)
+                  typeof query['index'] === 'string' && query['index'].length > 0
+                    ? parseInt(query['index'])
                     : undefined,
               });
 
@@ -68,7 +68,7 @@ function PreviewPlugin(): Plugin[] {
     },
     {
       name: 'preview',
-      async handleHotUpdate({ file, modules: mods, read, server, timestamp }) {
+      async handleHotUpdate({ file, modules: mods, read, server }) {
         if (file.endsWith('.vue')) {
           const affectedModules = new Set<ModuleNode | null | undefined>(
             mods.filter((mod) => {
@@ -167,6 +167,8 @@ function PreviewPlugin(): Plugin[] {
 
           return Array.from(affectedModules).filter((m): m is ModuleNode => m != null);
         }
+
+        return
       },
 
       configResolved(config) {
@@ -191,6 +193,8 @@ function PreviewPlugin(): Plugin[] {
         if (resource != null) {
           return resourceToFile(resource);
         }
+
+        return
       },
 
       load(id) {
@@ -293,6 +297,8 @@ function PreviewPlugin(): Plugin[] {
             code: `export default null; `,
           };
         }
+
+        return
       },
 
       async configureServer(server) {

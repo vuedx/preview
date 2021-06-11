@@ -6,6 +6,25 @@
   "displayName": "Preview - VueDX",
   "main": "dist/extension.js",
   "icon": "logo.png",
+  "buildConfig": {
+    "useMain": false,
+    "sources": {
+      "src/index.ts": [
+        {
+          "format": "commonjs",
+          "file": "dist/extension.js",
+          "bundle": {
+            "external": [
+              "vscode"
+            ]
+          }
+        }
+      ]
+    },
+    "external": [
+      "vscode"
+    ]
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/znck/preview.git",
@@ -31,17 +50,47 @@
         "icon": "$(open-preview)"
       },
       {
+        "command": "preview.showSource",
+        "enablement": "preview:isFocused",
+        "title": "Show .vue file",
+        "category": "Preview",
+        "icon": "$(go-to-file)"
+      },
+      {
         "command": "preview.open",
-        "enablement": "resourceLangId == vue",
+        "enablement": "resourceLangId == vue || preview:isFocused",
         "title": "Open preview in browser",
         "category": "Preview",
         "icon": "$(browser)"
       },
       {
+        "command": "preview.update",
+        "enablement": "preview:isViteStarted",
+        "title": "Update @vuedx/preview package",
+        "category": "Preview",
+        "icon": "$(arrow-up)"
+      },
+      {
         "command": "preview.stop",
         "enablement": "preview:isViteStarted",
         "title": "Stop preview server",
-        "category": "Preview"
+        "category": "Preview",
+        "icon": "$(stop)"
+      },
+      {
+        "command": "preview.refresh",
+        "enablement": "preview:isFocused",
+        "title": "Referh preview",
+        "category": "Preview",
+        "icon": "$(refresh)"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "preview.refresh",
+        "key": "ctrl+r",
+        "mac": "cmd+r",
+        "when": "preview:isFocused"
       }
     ],
     "menus": {
@@ -52,9 +101,24 @@
           "group": "navigation"
         },
         {
-          "when": "resourceLangId == vue",
-          "command": "preview.open",
+          "when": "preview:isFocused",
+          "command": "preview.showSource",
           "group": "navigation"
+        },
+        {
+          "when": "preview:isFocused",
+          "command": "preview.refresh",
+          "group": "navigation"
+        },
+        {
+          "when": "preview:isFocused || resourceLangId == vue",
+          "command": "preview.open",
+          "group": "z_commands"
+        },
+        {
+          "when": "preview:isFocused && preview:isViteStarted",
+          "command": "preview.stop",
+          "group": "z_commands"
         }
       ]
     }

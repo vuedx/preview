@@ -1,3 +1,4 @@
+// @ts-ignore - export * is not supported from rollup-plugin-dts
 import { Component, defineComponent, h } from 'vue';
 
 export function repeat<T>(count: number, generator: (index: number) => T): T[] {
@@ -61,6 +62,7 @@ export const on = createFunctionObject(
 export function defineStubComponent(name: string, component: Component): Component {
   return defineComponent({
     name: `stub-${name}`,
+    // @ts-ignore — rollup-pugin-dts
     setup: (props, { slots }) => {
       return () =>
         h(
@@ -89,6 +91,7 @@ export const stub = createFunctionObject(
     showProps: (): Component =>
       defineStubComponent(
         'anonymous',
+        // @ts-ignore - rollup-plugin-dts does not work with export *
         defineComponent((_, { attrs }) => () => h('pre', null, JSON.stringify(attrs, null, 2)))
       ),
   }

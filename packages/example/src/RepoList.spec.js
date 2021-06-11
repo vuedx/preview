@@ -6,13 +6,7 @@ import { usePreview, usePreviewApp } from '@vuedx/preview-test-utils';
 
 describe('RepoList', () => {
   test('should render list of repositories', async () => {
-    const wrapper = mount(
-      usePreview('one repo', {
-        requests: {
-          'https://api.github.com/users/znck/repos': [{ name: 'preview' }],
-        },
-      })
-    );
+    const wrapper = mount(usePreview('one repo'));
 
     await waitFor(() => {
       expect(wrapper.findAll('li')).toHaveLength(1);

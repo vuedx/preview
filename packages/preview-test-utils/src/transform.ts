@@ -49,6 +49,8 @@ export function findPreviewConfig(fileName: string): string | undefined {
 
     dirName = Path.dirname(dirName);
   }
+
+  return;
 }
 
 export function generatePreviewComponent(
@@ -58,7 +60,7 @@ export function generatePreviewComponent(
 ) {
   const descriptor = store.get(fileName);
   const block = descriptor.customBlocks.find(
-    (block) => block.type === 'preview' && block.attrs.name === previewName
+    (block) => block.type === 'preview' && block.attrs['name'] === previewName
   );
   if (block == null) throw new Error(`Cannot find preview: "${previewName}" in ${fileName}`);
 

@@ -1,5 +1,5 @@
-import { PropInfo } from '@vuedx/analyze';
-import Path from 'path';
+import type { PropInfo } from '@vuedx/analyze';
+import * as Path from 'path';
 
 export function getPreviewShellPath() {
   const pkgPath = require.resolve('@vuedx/preview-shell/package.json');
@@ -31,8 +31,9 @@ export function getPropValue(prop: PropInfo): string {
 
   if (prop.type.length === 1) {
     const type = prop.type[0];
-
-    if (type.kind === 'string') {
+    if (type == null) {
+      return 'null';
+    } else if (type.kind === 'string') {
       return '$p.string()';
     } else if (type.kind === 'number') {
       return '$p.number()';

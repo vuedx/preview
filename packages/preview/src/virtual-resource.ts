@@ -28,13 +28,13 @@ export function parsePreviewResource(uri: string): ComponentResource | undefined
     const type = uri.substr(0, i);
 
     const query = getQueryObject(uri.substr(i + 1));
-    const index = parseInt(String(query.index));
+    const index = parseInt(String(query['index']));
 
-    if (type === '' || query.fileName == null) return undefined;
+    if (type === '' || query['fileName'] == null) return undefined;
 
     return {
       type: type as any,
-      fileName: String(query.fileName),
+      fileName: String(query['fileName']),
       index: Number.isInteger(index) ? index : undefined,
     };
   }

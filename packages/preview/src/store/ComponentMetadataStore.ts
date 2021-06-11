@@ -1,8 +1,8 @@
 import { ComponentInfo, createFullAnalyzer } from '@vuedx/analyze';
-import { SFCBlock } from '@vuedx/compiler-sfc';
+import type { SFCBlock } from '@vuedx/compiler-sfc';
 import * as Path from 'path';
 import * as FS from 'fs';
-import { DescriptorStore } from './DescriptorStore';
+import type { DescriptorStore } from './DescriptorStore';
 
 interface PreviewMetadata {
   id: number;
@@ -111,6 +111,8 @@ export class ComponentMetadataStore {
             deviceProps: props,
           };
         }
+
+        return
       })
       .filter((item): item is PreviewMetadata => item != null);
   }

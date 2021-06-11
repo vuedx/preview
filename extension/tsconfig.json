@@ -1,13 +1,4 @@
 {
-  "compilerOptions": {
-    "moduleResolution": "node",
-    "target": "ESNext",
-    "module": "ESNext",
-    "rootDir": ".",
-    "baseUrl": ".",
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "outDir": "dist"
-  },
+  "extends": "../tsconfig.base.json",
   "include": ["src"]
 }

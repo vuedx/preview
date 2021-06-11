@@ -1,4 +1,4 @@
-import { DescriptorStore } from './DescriptorStore';
+import type { DescriptorStore } from './DescriptorStore';
 import { compile } from '@vuedx/preview-compiler';
 import crypto from 'crypto';
 

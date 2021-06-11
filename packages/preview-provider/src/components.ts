@@ -1,3 +1,4 @@
+// @ts-ignore - export * is not supported from rollup-plugin-dts
 import { Component, getCurrentInstance } from 'vue';
 import { defineStubComponent } from './utilities';
 

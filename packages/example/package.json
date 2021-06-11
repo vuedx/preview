@@ -2,6 +2,9 @@
   "private": true,
   "name": "example",
   "version": "0.0.0",
+  "buildConfig": {
+    "useMain": false
+  },
   "scripts": {
     "start": "node ../preview/bin/preview.js",
     "test": "jest"

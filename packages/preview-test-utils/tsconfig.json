@@ -1,10 +1,5 @@
 {
   "extends": "../../tsconfig.base.json",
   "include": ["src"],
-  "compilerOptions": {
-    "rootDir": "src",
-    "lib": ["ES2019", "DOM"],
-    "declarationDir": "types",
-    "declaration": true
-  }
+  "compilerOptions": { "lib": ["ES2019", "DOM"] }
 }

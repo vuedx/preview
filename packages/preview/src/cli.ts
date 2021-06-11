@@ -1,13 +1,9 @@
-const start = Date.now();
-import * as chalk from 'chalk';
-import createDebugLogger from 'debug';
+import chalk from 'chalk';
 import * as path from 'path';
 import { createServer } from 'vite';
-import { PreviewPlugin } from './plugin';
+import { PreviewPlugin } from '.';
 
-const debug = createDebugLogger('preview:cli');
-
-function logHelp() {
+function logHelp(): void {
   console.log(`
 Usage: preview [command] [args] [--options]
 Commands:
@@ -39,7 +35,7 @@ export async function run(argv: any) {
       })`
     )
   );
-  const { help, h, mode, m, version, v } = argv;
+  const { help, h, version, v } = argv;
 
   if (help || h) {
     logHelp();

@@ -1,4 +1,5 @@
-scripts
-src
-package.bak.json
-tsconfig.json
+**
+!readme.md
+!logo.png
+!LICENSE
+!dist/

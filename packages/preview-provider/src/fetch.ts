@@ -1,4 +1,5 @@
 import { notify } from './communication';
+// @ts-ignore - rollup-plugin-dts does not work with export *
 import { getCurrentInstance, onUnmounted } from 'vue';
 interface RequestHandler {
   (

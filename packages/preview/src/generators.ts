@@ -1,4 +1,4 @@
-import { SFCDescriptor } from '@vuedx/compiler-sfc';
+import type { SFCDescriptor } from '@vuedx/compiler-sfc';
 import * as FS from 'fs';
 import * as Path from 'path';
 import { ComponentResourceType, resourceToID, ResourceType } from './virtual-resource';
@@ -36,7 +36,7 @@ export function genPreviewIFrameContent(
   ].join('\n');
 }
 export function genPreviewAppEntryScript(
-  rootDir: string,
+  _rootDir: string,
   resource: {
     type: ComponentResourceType;
     fileName: string;
