@@ -206,10 +206,10 @@ importers:
       '@vuedx/preview-provider': link:../preview-provider
       babel-preset-jest: 26.6.2_@babel+core@7.12.10
       override-require: 1.1.1
-      vue: 3.0.5
     devDependencies:
       '@types/node': 14.14.22
       typescript: 4.3.2
+      vue: 3.0.5
 
 packages:
 
