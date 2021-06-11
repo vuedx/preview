@@ -1,5 +1,3 @@
-> Project Status: 🚨 Alpha
-
 <div align="center" style="margin-bottom: 72px">
 
 <table border="0">  
