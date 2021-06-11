@@ -1,5 +1,15 @@
 # @vuedx/preview
 
+## 0.2.1
+
+### Patch Changes
+
+- b0eea6a: Build using @vuedx/monorepo-tools
+- Updated dependencies [b0eea6a]
+  - @vuedx/preview-provider@0.1.4
+  - @vuedx/preview-shell@0.2.1
+  - @vuedx/preview-compiler@0.2.1
+
 ## 0.2.0
 
 ### Minor Changes

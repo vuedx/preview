@@ -1,5 +1,11 @@
 # @vuedx/preview-compiler
 
+## 0.2.1
+
+### Patch Changes
+
+- b0eea6a: Build using @vuedx/monorepo-tools
+
 ## 0.2.0
 
 ### Minor Changes

@@ -1,6 +1,6 @@
 {
   "name": "@vuedx/preview",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Component preview tool for rapid development.",
   "main": "dist/preview.js",
   "module": "dist/preview.mjs",

@@ -1,6 +1,6 @@
 {
   "name": "@vuedx/preview-shell",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "scripts": {
     "start": "vite serve",
     "build": "vite build --base /@preview:shell/"
