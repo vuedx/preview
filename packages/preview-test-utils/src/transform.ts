@@ -1,12 +1,13 @@
 import { transformSync as transform } from '@babel/core';
 import { parse, SFCDescriptor } from '@vuedx/compiler-sfc';
 import { compile } from '@vuedx/preview-compiler';
-import FS from 'fs';
-import Path from 'path';
+import * as FS from 'fs';
+import * as Path from 'path';
 
 class DescriptorStore {
-  private cache = new Map<string, SFCDescriptor>();
-  private prevContent = new Map<string, string>();
+  private readonly cache = new Map<string, SFCDescriptor>();
+
+  private readonly prevContent = new Map<string, string>();
 
   get(fileName: string, content?: string): SFCDescriptor {
     const descriptor = this.cache.get(fileName);
@@ -39,7 +40,7 @@ export function findPreviewConfig(fileName: string): string | undefined {
   const config = configCache.find(([dir]) => fileName.startsWith(dir));
   if (config != null) return config[1];
   let dirName = Path.dirname(fileName);
-  while (dirName != Path.dirname(dirName)) {
+  while (dirName !== Path.dirname(dirName)) {
     const configs = [Path.resolve(dirName, 'preview.ts'), Path.resolve(dirName, 'preview.js')];
     const configFile = configs.find((fileName) => FS.existsSync(fileName));
     if (configFile != null) {
@@ -50,14 +51,14 @@ export function findPreviewConfig(fileName: string): string | undefined {
     dirName = Path.dirname(dirName);
   }
 
-  return;
+  return undefined;
 }
 
 export function generatePreviewComponent(
   fileName: string,
   previewName: string,
   isAppMode: boolean = false
-) {
+): string {
   const descriptor = store.get(fileName);
   const block = descriptor.customBlocks.find(
     (block) => block.type === 'preview' && block.attrs['name'] === previewName
@@ -102,6 +103,6 @@ export function generatePreviewComponent(
       filename: fileName,
       presets: ['babel-preset-jest'],
       plugins: ['@babel/plugin-transform-modules-commonjs'],
-    })?.code || code
+    })?.code ?? code
   );
 }

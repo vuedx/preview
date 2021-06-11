@@ -1,5 +1,5 @@
 import { parse, SFCDescriptor } from '@vuedx/compiler-sfc';
-import FS from 'fs';
+import * as FS from 'fs';
 
 export class DescriptorStore {
   private cache = new Map<string, SFCDescriptor>();

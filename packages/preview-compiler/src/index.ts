@@ -6,7 +6,7 @@ import {
   isRootNode,
   isSimpleExpressionNode,
 } from '@vuedx/template-ast-types';
-import Path from 'path';
+import * as Path from 'path';
 
 interface SetupOutput {
   components: string;

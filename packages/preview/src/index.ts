@@ -1,7 +1,7 @@
 import type { SFCBlock, SFCDescriptor } from '@vuedx/compiler-sfc';
 import glob from 'fast-glob';
-import FS from 'fs';
-import Path from 'path';
+import * as FS from 'fs';
+import * as Path from 'path';
 import sirv from 'sirv';
 import { ModuleNode, Plugin, send } from 'vite';
 import {

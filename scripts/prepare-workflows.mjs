@@ -1,6 +1,6 @@
 import YAML from 'js-yaml';
-import Path from 'path';
-import FS from 'fs';
+import * as Path from 'path';
+import * as FS from 'fs';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);

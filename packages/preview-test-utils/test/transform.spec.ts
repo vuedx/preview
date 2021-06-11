@@ -1,4 +1,4 @@
-import Path from 'path';
+import * as Path from 'path';
 import { generatePreviewComponent } from '../src/transform';
 
 describe('transform()', () => {

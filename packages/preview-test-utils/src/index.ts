@@ -1,7 +1,7 @@
 // @ts-ignore - rollup-plugin-dts does not support export *
 import type { ComponentPublicInstance, App } from 'vue';
 import type { SetupOptions } from '@vuedx/preview-provider';
-import Path from 'path';
+import * as Path from 'path';
 import { getStackTraceLine } from './stacktrace';
 import { execute, executeAsApp } from './vm';
 
