@@ -98,7 +98,7 @@ jobs:
       - *pnpm
       - *download
       - name: Test
-        run: pnpm recursive run test -- --coverage
+        run: pnpm test
       - name: Collect coverage
         if: matrix.command == 'coverage'
         uses: codecov/codecov-action@v1
