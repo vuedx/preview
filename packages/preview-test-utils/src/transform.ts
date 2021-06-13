@@ -53,6 +53,16 @@ export function findPreviewConfig(fileName: string): string | undefined {
 
   return undefined;
 }
+export function getPreviewId(
+  fileName: string,
+  previewName: string,
+  isApp: boolean = false
+): string {
+  return `${fileName}?${isApp ? 'app&' : ''}preview=${encodeURIComponent(previewName).replace(
+    /%20/g,
+    '+'
+  )}`;
+}
 
 export function generatePreviewComponent(
   fileName: string,
@@ -74,11 +84,11 @@ export function generatePreviewComponent(
       preamble = [
         `import * as _preview from '${importSource}'`,
         `import * as _vue from 'vue'`,
-        `function _createApp(component) {`,
+        `function _createApp(component, attrs) {`,
         `  const createApp = typeof _preview.createApp === 'function'`,
         `    ? _preview.createApp`,
         `    : _vue.createApp`,
-        `  const app = createApp(component)`,
+        `  const app = createApp(component, attrs)`,
         `  if (_preview.x != null) {`,
         `    app.provide('preview:UserProviders', _preview.x)`,
         `  }`,
@@ -91,18 +101,54 @@ export function generatePreviewComponent(
     }
   }
 
+  const id = getPreviewId(fileName, previewName, isAppMode);
   const code =
     preamble +
     compile(block.content, {
       componentFileName: fileName,
       allowOverrides: isAppMode ? '_createApp' : true,
+      attrs: block.attrs,
+      imports: {
+        '@vuedx/preview-provider': require.resolve('@vuedx/preview-provider'),
+      },
     });
 
-  return (
-    transform(code, {
-      filename: fileName,
-      presets: ['babel-preset-jest'],
-      plugins: ['@babel/plugin-transform-modules-commonjs'],
-    })?.code ?? code
-  );
+  const result = transform(code, {
+    filename: id,
+    sourceFileName: fileName,
+    presets: [
+      [
+        '@babel/preset-env',
+        {
+          targets: {
+            node: 'current',
+          },
+        },
+      ],
+    ],
+    babelrc: false,
+    cwd: process.cwd(),
+    caller: {
+      name: '@vuedx/preview',
+      supportsStaticESM: false,
+      supportsDynamicImport: false,
+      supportsTopLevelAwait: false,
+      supportsExportNamespaceFrom: false,
+    },
+    sourceMaps: 'inline',
+    sourceType: 'module',
+    generatorOpts: {
+      filename: id,
+      sourceFileName: fileName,
+      sourceMaps: true,
+    },
+  });
+
+  if (result?.code == null) {
+    console.warn(`Babel transform failed for:\n${code}`);
+
+    throw new Error(`Babel tranform failed in ${id} (@vuedx/preview)`);
+  }
+
+  return result.code;
 }

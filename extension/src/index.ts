@@ -3,6 +3,7 @@ import * as FS from 'fs';
 import getPort from 'get-port';
 import * as Path from 'path';
 import vscode from 'vscode';
+import { getWebviewContent } from './getWebviewContent';
 
 interface ViteProcess {
   port: number;
@@ -139,12 +140,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           }
         );
         panel.iconPath = vscode.Uri.file(Path.resolve(context.extensionPath, 'logo.png'));
-
-        console.log('Icon:', Path.resolve(context.extensionPath, 'icon.svg'));
         panel.onDidDispose(() => {
           previewSources.delete(panel);
         });
-
         panel.onDidChangeViewState(async (event) => {
           if (event.webviewPanel.active) {
             activeWebviewPanel = event.webviewPanel;
@@ -157,6 +155,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             'preview:isFocused',
             event.webviewPanel.active
           );
+        });
+        panel.webview.onDidReceiveMessage(async (event: { command: string; payload: any }) => {
+          switch (event.command) {
+            case 'alert': {
+              await vscode.window.showInformationMessage(event.payload.message);
+              break;
+            }
+          }
         });
         panel.webview.html = getWebviewContent(
           '<div style="display: flex; height: 100%; align-items: center; justify-content: center;">Starting preview...</div>'
@@ -263,7 +269,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 function getPreviewIFrame(uri: string): string {
   return `
-        <iframe style="border: none;" width="100%" height="100%" src="${uri}&t=${Date.now()}"></iframe>
+        <iframe style="border: none;" width="100%" height="100%" src="${uri}&t=${Date.now()}&vscode"></iframe>
         `;
 }
 
@@ -340,36 +346,4 @@ function getExtensionName(context: vscode.ExtensionContext): string {
   }
 }
 
-function getWebviewContent(body: string): string {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Preview</title>
-    <style>
-      html, body {
-        padding: 0;
-        margin: 0;
-        height: 100%;
-        overflow: auto;
-      }
-    </style>
-</head>
-<body>
-${body}
-<script>
-window.addEventListener('message', event => {
-  const { kind, payload } = event.data
 
-  if (kind === 'event') {
-    console.log('Dispatch event:', JSON.stringify(payload,null,2))
-    if (payload.type.startsWith('key')) {
-      window.dispatchEvent(new KeyboardEvent(payload.type, payload.init))
-    }
-  }
-}, false)
-</script>
-</body>
-</html>`;
-}

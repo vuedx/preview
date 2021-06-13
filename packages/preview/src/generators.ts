@@ -9,7 +9,7 @@ export function genPreviewIFrameContent(
     fileName: string;
     index?: number | undefined;
   }
-) {
+): string {
   const fileName = Path.relative(rootDir, resource.fileName);
   const app = resourceToID({
     type: ComponentResourceType.ENTRY,
@@ -43,7 +43,7 @@ export function genPreviewAppEntryScript(
     index?: number | undefined;
   },
   descriptor: SFCDescriptor
-) {
+): string {
   const instance = resourceToID({
     type: ComponentResourceType.COMPONENT,
     fileName: resource.fileName,
@@ -67,38 +67,52 @@ export function genPreviewAppEntryScript(
 }
 export function genVSCodeKeyboardEventSupport(): string {
   return `
-const events = ['keydown', 'keyup'];
-if (window.parent !== window.top) {
-  events.forEach(event => {
-    document.addEventListener(event, event => {
-      window.parent.postMessage({
-        kind: 'event',
-        payload: {
-          type: event.type,
-          init: {
-            altKey: event.altKey,
-            code: event.code,
-            ctrlKey: event.ctrlKey,
-            isComposing: event.isComposing,
-            key: event.key,
-            location: event.location,
-            metaKey: event.metaKey,
-            repeat: event.repeat,
-            shiftKey: event.shiftKey
+  const events = ['keydown', 'keyup'];
+  if (window.parent !== window.top) {
+    events.forEach(event => {
+      document.addEventListener(event, event => {
+        window.parent.postMessage({
+          kind: 'event',
+          payload: {
+            type: event.type,
+            init: {
+              altKey: event.altKey,
+              code: event.code,
+              ctrlKey: event.ctrlKey,
+              isComposing: event.isComposing,
+              key: event.key,
+              location: event.location,
+              metaKey: event.metaKey,
+              repeat: event.repeat,
+              shiftKey: event.shiftKey
+            }
           }
-        }
-      }, '*')
+        }, '*')
+      })
     })
-  })
-  window.addEventListener('message', event => {
-    if (event.source === window) return
-    window.postMessage(event.data, '*')
-  }, false)
-}
+    window.addEventListener('message', event => {
+      if (event.source === window.self) return
+      console.log('Message', event)
+      const payload = event.data
+
+      if (typeof payload === 'object' && payload.source === 'vscode') {
+        switch (payload.command) {
+          case 'setTheme': {
+              console.log(payload)
+              document.body.setAttribute('color-scheme', payload.args.colorScheme)
+            }
+            break
+        }
+      }
+
+      // Forward to Nested iframes
+      window.postMessage(event.data, '*')
+    }, false)
+  }
 `;
 }
 
-export function genEntryHTML(shellBasePath: string) {
+export function genEntryHTML(shellBasePath: string): string {
   const components = ResourceType.LIST_COMPONENTS;
 
   const html = FS.readFileSync(Path.resolve(shellBasePath, 'index.html'), 'utf-8').replace(

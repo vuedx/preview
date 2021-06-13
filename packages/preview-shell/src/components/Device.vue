@@ -6,6 +6,7 @@ import FreeformDevice from './FreeformDevice.vue';
 
 import devices from '../devices';
 export default defineComponent({
+  inheritAttrs: false,
   props: {
     name: { type: String, default: 'freeform' },
   },
@@ -23,11 +24,11 @@ export default defineComponent({
 </script>
 
 <template>
-  <FreeformDevice v-if="name === 'freeform'">
+  <FreeformDevice v-if="name === 'freeform'" v-bind="$attrs">
     <slot />
   </FreeformDevice>
   <template v-else-if="device">
-    <ConfiguredDevice :device="device">
+    <ConfiguredDevice v-bind="$attrs" :device="device">
       <slot />
     </ConfiguredDevice>
   </template>

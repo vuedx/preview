@@ -1,6 +1,7 @@
 import type { NodeTransform } from '@vue/compiler-core';
 import { compile as baseCompile } from '@vue/compiler-dom';
 import {
+  isAttributeNode,
   isDirectiveNode,
   isElementNode,
   isRootNode,
@@ -12,6 +13,7 @@ interface SetupOutput {
   components: string;
   requests: string;
   state: string;
+  async?: boolean;
 }
 
 function createPreviewSetupTransform(output: SetupOutput): NodeTransform {
@@ -22,7 +24,9 @@ function createPreviewSetupTransform(output: SetupOutput): NodeTransform {
       context.removeNode();
 
       node.props.forEach((prop) => {
-        if (isDirectiveNode(prop) && prop.name === 'bind') {
+        if (isAttributeNode(prop)) {
+          output.async = prop.value != null ? prop.value.content.toLowerCase() === 'true' : true;
+        } else if (isDirectiveNode(prop) && prop.name === 'bind') {
           if (isSimpleExpressionNode(prop.arg) && prop.arg.isStatic) {
             if (
               prop.arg.content === 'components' ||
@@ -44,12 +48,13 @@ export interface CompileOptions {
   componentFileName: string;
   allowOverrides?: boolean | string;
   attrs?: Record<string, string | boolean>;
+  imports?: Record<string, string>;
   hmrId?: string;
 }
 
 export function compile(
   content: string,
-  { componentFileName, hmrId, allowOverrides, attrs = {} }: CompileOptions
+  { componentFileName, hmrId, allowOverrides, attrs = {}, imports = {} }: CompileOptions
 ): string {
   const setup: SetupOutput = {
     components: '{}',
@@ -62,14 +67,17 @@ export function compile(
     sourceMap: false,
     hoistStatic: true,
     cacheHandlers: true,
+    expressionPlugins: ['typescript', 'dynamicImport'],
     nodeTransforms: [createPreviewSetupTransform(setup)],
   });
   const componentName = (componentFileName.split(Path.sep).pop() ?? 'self').replace(/\.vue$/, '');
 
   const preamble = getCode(
     result.preamble,
-    `import { defineComponent, reactive, inject } from 'vue'`,
-    `import { provider, useRequests, useComponents, installFetchInterceptor } from '@vuedx/preview-provider'`,
+    `import { defineComponent, reactive, inject } from '${imports['vue'] ?? 'vue'}'`,
+    `import { provider, useRequests, useComponents, installFetchInterceptor } from '${
+      imports['@vuedx/preview-provider'] ?? '@vuedx/preview-provider'
+    }'`,
     `import _component_self from '${componentFileName.replace(/\\/g, '/')}'`,
     `installFetchInterceptor()`,
     result.code
@@ -78,7 +86,7 @@ export function compile(
   const source = `defineComponent({
   name: 'Preview',
   components: { "${componentName}": _component_self },
-  setup() {
+  ${setup.async === true ? 'async ' : ''}setup() {
     const preview = { 
       ...provider,
       attrs: ${JSON.stringify(attrs)}, 
@@ -113,7 +121,7 @@ export function compile(
   }
 }
 
-function generateHMR(hmrId: string) {
+function generateHMR(hmrId: string): string {
   return `  
 _preview_main.__hmrId = '${hmrId}'
 typeof __VUE_HMR_RUNTIME__ !== 'undefined' && __VUE_HMR_RUNTIME__.createRecord(_preview_main.__hmrId, _preview_main)

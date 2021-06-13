@@ -35,12 +35,11 @@ function PreviewPlugin(): Plugin[] {
 
   return [
     {
-      name: 'preview:pre',
+      name: '@vuedx/preview:pre',
       enforce: 'pre',
-
       async configureServer(server) {
         const serve = sirv(shellBasePath, { dev: true, etag: true, extensions: [] });
-        server.middlewares.use(async (req, res, next) => {
+        server.middlewares.use((req, res, next) => {
           if (req.method === 'GET' && req.url != null) {
             if (req.url.startsWith(SHELL_PREFIX)) {
               req.url = req.url.substr(SHELL_PREFIX.length + 1);
@@ -67,12 +66,12 @@ function PreviewPlugin(): Plugin[] {
       },
     },
     {
-      name: 'preview',
+      name: '@vuedx/preview',
       async handleHotUpdate({ file, modules: mods, read, server }) {
         if (file.endsWith('.vue')) {
           const affectedModules = new Set<ModuleNode | null | undefined>(
             mods.filter((mod) => {
-              if (mod.id != null) return !/\?vue&type=preview/.test(mod.id);
+              if (mod.id != null) return !mod.id.includes('?vue&type=preview');
               return true;
             })
           );
@@ -104,8 +103,9 @@ function PreviewPlugin(): Plugin[] {
             const next = nextPreviews[i];
 
             if (prev != null && next != null) {
-              if (prev.content !== next.content) updated.add(i);
-              else unchanged.add(i);
+              if (prev.content !== next.content || !areAttrsEqual(prev.attrs, next.attrs)) {
+                updated.add(i);
+              } else unchanged.add(i);
             } else if (next !== null) {
               added.add(i);
             } else if (prev != null) {
@@ -124,9 +124,9 @@ function PreviewPlugin(): Plugin[] {
           const prevCount = prevPreviews.filter((block) => block != null).length;
           const nextCount = nextPreviews.filter((block) => block != null).length;
 
-          if (nextCount > 0 && prevCount == 0) {
+          if (nextCount > 0 && prevCount === 0) {
             removed.add(undefined);
-          } else if (prevCount == 0 && nextCount > 0) {
+          } else if (prevCount === 0 && nextCount > 0) {
             added.add(undefined);
           }
 
@@ -155,7 +155,8 @@ function PreviewPlugin(): Plugin[] {
           const modules = await Promise.all(
             Array.from(ids).map(
               async (id) =>
-                server.moduleGraph.getModuleById(id) ?? server.moduleGraph.getModuleByUrl(`/${id}`)
+                server.moduleGraph.getModuleById(id) ??
+                (await server.moduleGraph.getModuleByUrl(`/${id}`))
             )
           );
 
@@ -168,7 +169,7 @@ function PreviewPlugin(): Plugin[] {
           return Array.from(affectedModules).filter((m): m is ModuleNode => m != null);
         }
 
-        return
+        return undefined;
       },
 
       configResolved(config) {
@@ -176,7 +177,7 @@ function PreviewPlugin(): Plugin[] {
         compiler = new PreviewCompilerStore(descriptors);
       },
 
-      resolveId(id) {
+      async resolveId(id, importer) {
         if (id === '@vuedx/preview-provider') {
           return providerPath;
         }
@@ -194,7 +195,16 @@ function PreviewPlugin(): Plugin[] {
           return resourceToFile(resource);
         }
 
-        return
+        if (importer != null) {
+          const importerAsResource = parsePreviewResource(importer);
+          if (importerAsResource != null) {
+            const importer = Path.resolve(store.root, importerAsResource.fileName);
+
+            return await this.resolve(id, importer);
+          }
+        }
+
+        return undefined;
       },
 
       load(id) {
@@ -292,13 +302,13 @@ function PreviewPlugin(): Plugin[] {
       },
 
       transform(_, id) {
-        if (/\?vue&type=preview/.test(id)) {
+        if (id.includes('?vue&type=preview')) {
           return {
             code: `export default null; `,
           };
         }
 
-        return
+        return undefined;
       },
 
       async configureServer(server) {
@@ -309,7 +319,7 @@ function PreviewPlugin(): Plugin[] {
 
         setupFile = file;
 
-        server.watcher.on('all', async (event, fileName) => {
+        server.watcher.on('all', (event, fileName) => {
           if (setupFiles.has(fileName)) {
             setupFile = fileName;
             // TODO: Invalidate setup file
@@ -320,12 +330,12 @@ function PreviewPlugin(): Plugin[] {
             if (event === 'unlink') {
               store.remove(fileName);
             } else if (event === 'add') {
-              store.add(fileName, await FS.promises.readFile(fileName, { encoding: 'utf-8' }));
+              store.add(fileName, FS.readFileSync(fileName, { encoding: 'utf-8' }));
             }
           }
         });
 
-        server.middlewares.use(async function ServePreviewShell(req, res, next) {
+        server.middlewares.use(function ServePreviewShell(req, res, next) {
           if (req.method === 'GET' && req.url != null) {
             // Serve all shell pages.
             const path = req.url.replace(/\?.*$/, '');
@@ -334,7 +344,7 @@ function PreviewPlugin(): Plugin[] {
             }
           }
 
-          return await next();
+          return next();
         });
 
         await loadVueFiles(rootDir, store);
@@ -360,8 +370,8 @@ async function loadVueFiles(root: string, store: ComponentMetadataStore): Promis
     cwd: root,
     ignore: ['node_modules', '**/node_modules/**/*'],
     absolute: true,
-  }).then((files) => {
-    return Promise.all(
+  }).then(async (files: string[]): Promise<void> => {
+    await Promise.all(
       files.map(async (fileName) => {
         store.add(fileName, await FS.promises.readFile(fileName, { encoding: 'utf-8' }));
       })
@@ -373,4 +383,22 @@ function getPreviewsBlocks(descriptor: SFCDescriptor): Array<SFCBlock | null> {
   return descriptor.customBlocks.map((block: SFCBlock) =>
     block.type === 'preview' ? block : null
   );
+}
+
+function areAttrsEqual(
+  x: Record<string, string | true>,
+  y: Record<string, string | true>
+): boolean {
+  if (x === y) return true;
+
+  for (const p in x) {
+    if (x[p] === y[p]) continue;
+    if (typeof x[p] !== 'object') return false;
+  }
+
+  for (const p in y) {
+    if (p in y && !(p in x)) return false;
+  }
+
+  return true;
 }

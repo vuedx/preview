@@ -92,10 +92,7 @@ export function usePreviewApp(previewName: string): App;
  * @param previewName "name" attribute of the required <preview> block
  * @param overrides Override mocks and stubs set in <preview> block
  */
-export function usePreviewApp(
-  previewName: string,
-  overrides: Partial<SetupOptions>
-): App;
+export function usePreviewApp(previewName: string, overrides: Partial<SetupOptions>): App;
 
 /**
  * Load <preview name="..."> block as an app.
@@ -134,7 +131,7 @@ function prepareArgs(
     | [string]
     | [string, string | Partial<SetupOptions<any>>]
     | [string, string, Partial<SetupOptions<any>>]
-) {
+): { fileName: string; previewName: string; overrides: Partial<SetupOptions> } {
   const fileName = getFileName(
     args.length === 3 || (args.length === 2 && typeof args[1] === 'string') ? args[0] : undefined,
     3

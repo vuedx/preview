@@ -1,6 +1,7 @@
 import commonjs from '@rollup/plugin-commonjs';
 import node from '@rollup/plugin-node-resolve';
 import replace from '@rollup/plugin-replace';
+import json from '@rollup/plugin-json';
 import typescript from '@rollup/plugin-typescript';
 import { generateRollupOptions } from '@vuedx/monorepo-tools';
 import * as Path from 'path';
@@ -22,6 +23,7 @@ export default generateRollupOptions({
       plugins: [
         node(),
         commonjs(),
+        json(),
         replace({ values, preventAssignment: true }),
         typescript({
           tsconfig: info.tsconfig?.configFile,

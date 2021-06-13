@@ -1,12 +1,12 @@
 <script lang="ts">
-import devices, { DeviceSpecs } from '../devices';
-import { computed, defineComponent, onMounted, PropType, ref } from 'vue';
+import type { DeviceSpecs } from '../devices';
+import { computed, defineComponent, PropType, ref } from 'vue';
 import BaseDevice from './BaseDevice.vue';
 export default defineComponent({
   components: { BaseDevice },
   props: {
     device: {
-      type: (null as unknown) as PropType<DeviceSpecs>,
+      type: null as unknown as PropType<DeviceSpecs>,
       required: true,
     },
   },
@@ -21,7 +21,7 @@ export default defineComponent({
         (window.innerWidth / props.device.width) * 80
       );
       const index = levels.findIndex((level) => level > expected);
-      zoom.value = levels[Math.max(0, index - 1)];
+      zoom.value = levels[Math.max(0, index - 1)] ?? 1;
     } catch {}
 
     const offsetSize = computed(() => {

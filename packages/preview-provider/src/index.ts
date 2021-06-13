@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/prefer-ts-expect-error
 // @ts-ignore - export * is not supported from rollup-plugin-dts
 import type { Component } from 'vue';
 import { useComponents } from './components';

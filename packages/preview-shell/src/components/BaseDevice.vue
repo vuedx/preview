@@ -51,6 +51,12 @@ export default defineComponent({
   background-color: #030309;
 }
 
+@media (prefers-color-scheme: dark) {
+  .screen {
+    background-color: #030309;
+  }
+}
+
 @media (prefers-color-scheme: light) {
   .screen {
     background-color: #fff;

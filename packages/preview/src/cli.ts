@@ -1,7 +1,11 @@
 import chalk from 'chalk';
-import * as path from 'path';
+import * as Path from 'path';
+import * as FS from 'fs';
 import { createServer } from 'vite';
-import { PreviewPlugin } from '.';
+import { version as viteVersion } from 'vite/package.json';
+import { version as previewVersion } from '../package.json';
+import { PreviewPlugin } from './index';
+import VuePlugin from '@vitejs/plugin-vue';
 
 function logHelp(): void {
   console.log(`
@@ -20,21 +24,21 @@ Options:
 `);
 }
 
-export async function run(argv: any) {
-  if (argv._[0] && !/^(build|serve)$/i.test(argv._[0])) {
+export async function run(argv: {
+  help: boolean;
+  h: boolean;
+  version: boolean;
+  v: boolean;
+  _: string[];
+}): Promise<void> {
+  if (argv._[0] != null && !/^(build|serve)$/i.test(argv._[0])) {
     argv._[1] = argv._[0];
     argv._[0] = 'serve';
   }
 
   const command = argv._[0];
 
-  console.log(
-    chalk.cyan(
-      `Preview v${require('../package.json').version} (vite v${
-        require('vite/package.json').version
-      })`
-    )
-  );
+  console.log(chalk.cyan(`Preview v${previewVersion} (vite v${viteVersion})`));
   const { help, h, version, v } = argv;
 
   if (help || h) {
@@ -44,14 +48,22 @@ export async function run(argv: any) {
     return;
   }
 
-  if (!command || command === 'serve') {
-    runServe(resolveOptions('development', argv));
+  if (command == null || command === 'serve') {
+    await runServe(resolveOptions('development', argv));
+  } else if (command === 'build') {
+    throw new Error(`'preview build' is not implemented`);
   } else {
-    // ???
+    console.error(`Unknown command: ${command}`);
+    logHelp();
+
+    process.exit(127);
   }
 }
 
-function resolveOptions(mode: string, argv: any): ServeArgs {
+function resolveOptions(
+  mode: string,
+  argv: { root?: string; open?: boolean; base?: string; mode?: string; port?: string; _: string[] }
+): ServeArgs {
   const options: ServeArgs = {
     mode,
     port: 3000,
@@ -66,11 +78,11 @@ function resolveOptions(mode: string, argv: any): ServeArgs {
 
   // normalize root
   // assumes all commands are in the form of `preview [command] [root]`
-  if (!argv.root && argv._[1]) {
+  if (argv.root == null && argv._[1] != null) {
     options.root = argv._[1];
   }
 
-  options.root = path.isAbsolute(options.root) ? options.root : path.resolve(options.root);
+  options.root = Path.isAbsolute(options.root) ? options.root : Path.resolve(options.root);
 
   return options;
 }
@@ -85,7 +97,11 @@ interface ServeArgs {
   force?: boolean;
 }
 
-async function runServe(options: ServeArgs) {
+async function runServe(options: ServeArgs): Promise<void> {
+  const hasViteConfig =
+    FS.existsSync(Path.resolve(options.root, 'vite.config.js')) ||
+    FS.existsSync(Path.resolve(options.root, 'vite.config.ts'));
+
   const server = await createServer({
     root: options.root,
     mode: options.mode,
@@ -95,7 +111,7 @@ async function runServe(options: ServeArgs) {
       open: options.open,
       force: options.force,
     },
-    plugins: PreviewPlugin(),
+    plugins: hasViteConfig ? PreviewPlugin() : [VuePlugin(), ...PreviewPlugin()],
     configFile: options.config,
   });
 
