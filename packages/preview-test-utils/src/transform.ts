@@ -109,7 +109,7 @@ export function generatePreviewComponent(
       allowOverrides: isAppMode ? '_createApp' : true,
       attrs: block.attrs,
       imports: {
-        '@vuedx/preview-provider': require.resolve('@vuedx/preview-provider'),
+        '@vuedx/preview-provider': require.resolve('@vuedx/preview-provider').replace(/\\/g, '/'),
       },
     });
 
