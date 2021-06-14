@@ -1,5 +1,11 @@
 # preview
 
+## 0.3.1
+
+### Patch Changes
+
+- dd448e6: Sync color-scheme with VS Code
+
 ## 0.3.0
 
 ### Minor Changes

@@ -1,5 +1,12 @@
 # @vuedx/preview-provider
 
+## 0.1.5
+
+### Patch Changes
+
+- dd448e6: Support async imports in `<preview>` blocks
+- dd448e6: Sync color-scheme with VS Code
+
 ## 0.1.4
 
 ### Patch Changes
