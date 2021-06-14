@@ -118,7 +118,7 @@ export function generatePreviewComponent(
     sourceFileName: fileName,
     presets: [
       [
-        '@babel/preset-env',
+        require.resolve('@babel/preset-env'),
         {
           targets: {
             node: 'current',
@@ -127,7 +127,6 @@ export function generatePreviewComponent(
       ],
     ],
     babelrc: false,
-    cwd: process.cwd(),
     caller: {
       name: '@vuedx/preview',
       supportsStaticESM: false,
