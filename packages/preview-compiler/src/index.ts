@@ -74,10 +74,10 @@ export function compile(
 
   const preamble = getCode(
     result.preamble,
-    `import { defineComponent, reactive, inject } from '${imports['vue'] ?? 'vue'}'`,
-    `import { provider, useRequests, useComponents, installFetchInterceptor } from '${
+    `import { defineComponent, reactive, inject } from ${JSON.stringify(imports['vue'] ?? 'vue')}`,
+    `import { provider, useRequests, useComponents, installFetchInterceptor } from ${JSON.stringify(
       imports['@vuedx/preview-provider'] ?? '@vuedx/preview-provider'
-    }'`,
+    )}`,
     `import _component_self from '${componentFileName.replace(/\\/g, '/')}'`,
     `installFetchInterceptor()`,
     result.code
