@@ -1,5 +1,11 @@
 # preview
 
+## 0.3.2
+
+### Patch Changes
+
+- cc16fc4: Ignore failures in metadata extraction from static code analysis
+
 ## 0.3.1
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @vuedx/preview
 
+## 0.2.4
+
+### Patch Changes
+
+- cc16fc4: Ignore failures in metadata extraction from static code analysis
+
 ## 0.2.3
 
 ### Patch Changes
