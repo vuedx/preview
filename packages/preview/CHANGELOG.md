@@ -1,5 +1,11 @@
 # @vuedx/preview
 
+## 0.2.3
+
+### Patch Changes
+
+- 70730fb: Ignore errors in static code analysis
+
 ## 0.2.2
 
 ### Patch Changes
