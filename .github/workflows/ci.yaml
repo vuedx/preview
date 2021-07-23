@@ -70,6 +70,7 @@ jobs:
             command: coverage
     runs-on: ${{ matrix.os }}
     name: Node ${{ matrix.node_version }} on ${{ matrix.os }}
+    continue-on-error: ${{ startsWith(github.event.head_commit.message, 'release:') }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -105,7 +106,7 @@ jobs:
           name: build-artefact
           path: .
       - name: Test
-        run: pnpm recursive run test -- --coverage
+        run: pnpm test
       - name: Collect coverage
         if: matrix.command == 'coverage'
         uses: codecov/codecov-action@v1
@@ -233,17 +234,18 @@ jobs:
         with:
           name: build-artefact
           path: .
+      - name: Publish Packages
+        run: |
+          echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' > .npmrc
+          pnpm recursive publish --no-git-checks
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Publish Extension
         run: |
           pnpm recursive --filter ./extension run release
         env:
           VSCODE_MARKETPLACE_TOKEN: ${{ secrets.VSCODE_MARKETPLACE_TOKEN }}
-      - name: Publish Packages
-        run: |
-          echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' > .npmrc
-          pnpm recursive publish --tag latest --access public --no-git-checks
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        continue-on-error: true
       - uses: marvinpinto/action-automatic-releases@latest
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
