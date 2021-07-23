@@ -242,9 +242,10 @@ function PreviewPlugin(): Plugin[] {
             if (resource.index == null) {
               const { info } = store.get(resource.fileName);
               const componentName = getComponentName(resource.fileName);
-              const props = info.props
-                .map((prop) => (prop.required ? ` :${prop.name}="${getPropValue(prop)}"` : ''))
-                .join('');
+              const props =
+                info?.props
+                  .map((prop) => (prop.required ? ` :${prop.name}="${getPropValue(prop)}"` : ''))
+                  .join('') ?? '';
 
               // TODO: extract as a function so it can be used in extension.
               return compiler.compileText(
