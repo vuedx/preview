@@ -1,7 +1,7 @@
 import type { PropInfo } from '@vuedx/analyze';
 import * as Path from 'path';
 
-export function getPreviewShellPath() {
+export function getPreviewShellPath(): string {
   const pkgPath = require.resolve('@vuedx/preview-shell/package.json');
   return Path.resolve(Path.dirname(pkgPath), 'dist');
 }

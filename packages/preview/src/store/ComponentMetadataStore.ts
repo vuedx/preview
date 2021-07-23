@@ -15,42 +15,45 @@ interface ComponentMetadata {
   id: string;
   name: string;
   path: string;
-  info: ComponentInfo;
+  info?: ComponentInfo;
   previews: PreviewMetadata[];
 }
 
-export function s(value: any, indent = 0) {
+export function s(value: any, indent = 0): string {
   return JSON.stringify(value, null, indent);
 }
 
 export class ComponentMetadataStore {
   private text: string = '';
-  private components = new Map<string, Omit<ComponentMetadata, 'loader' | 'docgen'>>();
-  private analyzer = createFullAnalyzer();
+  private readonly components = new Map<string, Omit<ComponentMetadata, 'loader' | 'docgen'>>();
+  private readonly analyzer = createFullAnalyzer();
 
-  constructor (public root: string, private descriptors: DescriptorStore) { }
+  constructor(public root: string, private readonly descriptors: DescriptorStore) {}
 
   isSupported(fileName: string): boolean {
-    return (Path.isAbsolute(fileName) ? fileName.startsWith(this.root) : !fileName.startsWith('..')) && fileName.endsWith('.vue')
+    return (
+      (Path.isAbsolute(fileName) ? fileName.startsWith(this.root) : !fileName.startsWith('..')) &&
+      fileName.endsWith('.vue')
+    );
   }
 
   private getAbsolutePath(fileName: string): string {
-    if (Path.isAbsolute(fileName)) return fileName
-    return Path.resolve(this.root, fileName.replace(/[\\\/]/g, Path.sep))
+    if (Path.isAbsolute(fileName)) return fileName;
+    return Path.resolve(this.root, fileName.replace(/[\\\/]/g, Path.sep));
   }
 
   private normalize(fileName: string): string {
-    return fileName.replace(/\\/g, '/')
+    return fileName.replace(/\\/g, '/');
   }
 
   get(fileName: string): Readonly<ComponentMetadata> {
-    const absFileName = this.getAbsolutePath(fileName)
+    const absFileName = this.getAbsolutePath(fileName);
     const metadata = this.components.get(absFileName);
     if (metadata == null) {
       if (this.isSupported(fileName) && FS.existsSync(absFileName)) {
-        this.add(absFileName, FS.readFileSync(absFileName, 'utf-8'))
+        this.add(absFileName, FS.readFileSync(absFileName, 'utf-8'));
         const metadata = this.components.get(absFileName);
-        if (metadata != null) return metadata
+        if (metadata != null) return metadata;
       }
 
       throw new Error('Metadata not found: ' + absFileName);
@@ -59,9 +62,9 @@ export class ComponentMetadataStore {
   }
 
   add(fileName: string, content: string): void {
-    const absFileName = this.getAbsolutePath(fileName)
+    const absFileName = this.getAbsolutePath(fileName);
     const relativeFileName = this.normalize(Path.relative(this.root, absFileName));
-    const id = relativeFileName.replace(/\.vue$/, '')
+    const id = relativeFileName.replace(/\.vue$/, '');
 
     this.text = '';
 
@@ -84,10 +87,14 @@ export class ComponentMetadataStore {
   reload(fileName: string, content: string): void {
     this.text = '';
 
-    const absFileName = this.getAbsolutePath(fileName)
+    const absFileName = this.getAbsolutePath(fileName);
     const component = this.components.get(absFileName);
     if (component != null) {
-      component.info = this.analyzer.analyze(content, this.normalize(absFileName)); // TODO: Make this lazy...
+      try {
+        component.info = this.analyzer.analyze(content, this.normalize(absFileName)); // TODO: Make this lazy...
+      } catch {
+        // Ignore errors for now
+      }
       component.previews = this.parse(content, absFileName);
     }
   }
@@ -112,7 +119,7 @@ export class ComponentMetadataStore {
           };
         }
 
-        return
+        return undefined;
       })
       .filter((item): item is PreviewMetadata => item != null);
   }
