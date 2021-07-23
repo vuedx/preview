@@ -240,10 +240,10 @@ function PreviewPlugin(): Plugin[] {
 
           case ComponentResourceType.COMPONENT: {
             if (resource.index == null) {
-              const { info } = store.get(resource.fileName);
+              const metadata = store.get(resource.fileName);
               const componentName = getComponentName(resource.fileName);
               const props =
-                info?.props
+                metadata?.info?.props
                   .map((prop) => (prop.required ? ` :${prop.name}="${getPropValue(prop)}"` : ''))
                   .join('') ?? '';
 

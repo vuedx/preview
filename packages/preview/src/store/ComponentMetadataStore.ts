@@ -46,7 +46,7 @@ export class ComponentMetadataStore {
     return fileName.replace(/\\/g, '/');
   }
 
-  get(fileName: string): Readonly<ComponentMetadata> {
+  get(fileName: string): Readonly<ComponentMetadata | undefined> {
     const absFileName = this.getAbsolutePath(fileName);
     const metadata = this.components.get(absFileName);
     if (metadata == null) {
@@ -55,8 +55,6 @@ export class ComponentMetadataStore {
         const metadata = this.components.get(absFileName);
         if (metadata != null) return metadata;
       }
-
-      throw new Error('Metadata not found: ' + absFileName);
     }
     return metadata;
   }
