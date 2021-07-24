@@ -9,9 +9,11 @@ interface ViteProcess {
   port: number;
   output: vscode.OutputChannel;
   instance: ChildProcess;
+  serverBaseURI: string;
+  onReady: Promise<any>;
 }
 
-const processes = new Map<string, ViteProcess & { onReady: Promise<void> }>();
+const processes = new Map<string, ViteProcess>();
 
 function findProjectDir(fileName: string): string {
   let dir = Path.dirname(fileName);
@@ -28,7 +30,7 @@ function findProjectDir(fileName: string): string {
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const bin = Path.resolve(context.extensionPath, 'node_modules/@vuedx/preview/bin/preview.js');
-  // TODO: Use global installation in .vuedx/preview directory.
+  // TODO: Use global installation in .vuedx/preview directory to avoid extension source changed warning.
   await vscode.commands.executeCommand('setContext', 'preview:isViteStarted', true);
 
   let activeWebviewPanel: vscode.WebviewPanel | undefined;
@@ -63,7 +65,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       cwd: rootDir,
       env: { ...process.env, CI: 'true' },
     });
-    const onReady = new Promise<void>((resolve, reject) => {
+    const onReady = new Promise<string>((resolve, reject) => {
       let isResolved = false;
       output.appendLine(`> Launching preview in ${rootDir}`);
 
@@ -71,29 +73,33 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         output.append(message.toString());
       });
 
-      instance.stdout?.on('data', (message) => {
-        console.log(message);
-        output.append(message.toString());
-        if (/> Network: /.test(message.toString())) {
+      const re = /> Local:\s+([^ \s\n]+)/;
+      instance.stdout?.on('data', (message: string | Buffer) => {
+        const line = message.toString();
+        output.append(line);
+        const match = re.exec(line);
+        if (!isResolved && match?.[1] != null) {
           isResolved = true;
-          resolve();
+          const url = match[1].trim().replace(/\/+$/, '');
+          setTimeout(() => {
+            output.appendLine(`Preview is ready, running on ${url}`);
+            resolve(url);
+          }, 1000);
         }
       });
 
       instance.on('exit', (code) => {
-        // output.clear();
-        // output.hide();
-        // output.dispose();
+        output.dispose();
         if (!isResolved) {
           reject(new Error(`Preview exited with code: ${code ?? 'null'}`));
         }
       });
     });
 
-    const result = { port, output, instance, onReady };
+    const result = { port, output, instance, serverBaseURI: '', onReady: onReady };
     processes.set(rootDir, result);
 
-    await onReady;
+    result.serverBaseURI = await onReady;
 
     return result;
   }
@@ -167,14 +173,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         panel.webview.html = getWebviewContent(
           '<div style="display: flex; height: 100%; align-items: center; justify-content: center;">Starting preview...</div>'
         );
-        const { instance, output } = await getViteInstance(bin, rootDir, port);
-        instance.stdin?.write(JSON.stringify({ command: 'open', arguments: { fileName } }) + '\n');
+        const vite = await getViteInstance(bin, rootDir, port);
+        vite.instance.stdin?.write(
+          JSON.stringify({ command: 'open', arguments: { fileName } }) + '\n'
+        );
 
         const id = Path.relative(rootDir, fileName);
-        const uri = `http://localhost:${port}/sandbox?fileName=${encodeURIComponent(id)}`;
+        const uri = `${vite.serverBaseURI}/sandbox?fileName=${encodeURIComponent(id)}`;
         previewSources.set(panel, { fileName, uri });
-        output.appendLine(`Preview File: "${fileName}"`);
-        output.appendLine(`URL: "${uri}"`);
+        vite.output.appendLine(`Preview File: "${fileName}"`);
+        vite.output.appendLine(`URL: "${uri}"`);
         panel.webview.html = getWebviewContent(getPreviewIFrame(uri));
       } catch (error) {
         console.error(error);
@@ -191,12 +199,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
       const rootDir = findProjectDir(fileName);
       const port = await getVitePort(rootDir);
-      const { instance, output } = await getViteInstance(bin, rootDir, port);
-      instance.stdin?.write(JSON.stringify({ command: 'open', arguments: { fileName } }) + '\n');
+      const vite = await getViteInstance(bin, rootDir, port);
+      vite.instance.stdin?.write(
+        JSON.stringify({ command: 'open', arguments: { fileName } }) + '\n'
+      );
       const id = Path.relative(rootDir, fileName);
-      const uri = `http://localhost:${port}/sandbox?fileName=${encodeURIComponent(id)}`;
-      output.appendLine(`Preview File: "${fileName}"`);
-      output.appendLine(`URL: "${uri}"`);
+      const uri = `${vite.serverBaseURI}/sandbox?fileName=${encodeURIComponent(id)}`;
+      vite.output.appendLine(`Preview File: "${fileName}"`);
+      vite.output.appendLine(`URL: "${uri}"`);
       await vscode.env.openExternal(vscode.Uri.parse(uri));
     }),
 
@@ -263,7 +273,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     });
 
     processes.clear();
-    await vscode.commands.executeCommand('setContext', 'preview:isViteStarted', false);
+    await vscode.commands.executeCommand('setContext', 'preview:isViteStarted', false); // TODO: This needs to be set per file basis.
   }
 }
 
@@ -291,8 +301,8 @@ async function installPreview(
           const output = vscode.window.createOutputChannel('Preview (installation)');
           const version = getExtensionName(context).includes('insiders') ? 'insiders' : 'latest';
           const command = __DEV__
-            ? `pnpm install ${__PREVIEW_INSTALLATION_SOURCE__}`
-            : `npm install @vuedx/preview@${version} --loglevel info`;
+            ? `pnpm add ${__PREVIEW_INSTALLATION_SOURCE__}`
+            : `npm add @vuedx/preview@${version} --loglevel info`;
           if (__DEV__) output.show();
           output.appendLine(command);
           const installation = exec(command, {
@@ -345,5 +355,3 @@ function getExtensionName(context: vscode.ExtensionContext): string {
     return 'znck.preview';
   }
 }
-
-

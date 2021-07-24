@@ -24,7 +24,7 @@ export default defineComponent({
   </ul>
 </template>
 
-<preview name="one repo">
+<preview name="one repo" color-scheme="light">
   <setup :requests="{
     'https://api.github.com/users/znck/repos': [
       {name: 'preview'},

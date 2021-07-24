@@ -1,8 +1,11 @@
-import { ComponentInfo, createFullAnalyzer } from '@vuedx/analyze';
+import type { ComponentInfo, createFullAnalyzer } from '@vuedx/analyze';
 import type { SFCBlock } from '@vuedx/compiler-sfc';
 import * as Path from 'path';
 import * as FS from 'fs';
 import type { DescriptorStore } from './DescriptorStore';
+import createDebugger from 'debug';
+
+const debug = createDebugger('@vuedx/preview:component-metadata');
 
 interface PreviewMetadata {
   id: number;
@@ -26,9 +29,19 @@ export function s(value: any, indent = 0): string {
 export class ComponentMetadataStore {
   private text: string = '';
   private readonly components = new Map<string, Omit<ComponentMetadata, 'loader' | 'docgen'>>();
-  private readonly analyzer = createFullAnalyzer();
 
-  constructor(public root: string, private readonly descriptors: DescriptorStore) {}
+  private analyzer?: ReturnType<typeof createFullAnalyzer>;
+
+  constructor(public root: string, private readonly descriptors: DescriptorStore) {
+    import('@vuedx/analyze')
+      .then((analyze) => {
+        debug('Static code analyze is ready');
+        this.analyzer = analyze.createFullAnalyzer();
+      })
+      .catch((error) => {
+        debug('Cannot initialize static code analyzer due to an error', error);
+      });
+  }
 
   isSupported(fileName: string): boolean {
     return (
@@ -39,7 +52,7 @@ export class ComponentMetadataStore {
 
   private getAbsolutePath(fileName: string): string {
     if (Path.isAbsolute(fileName)) return fileName;
-    return Path.resolve(this.root, fileName.replace(/[\\\/]/g, Path.sep));
+    return Path.resolve(this.root, fileName.replace(/[\\/]/g, Path.sep));
   }
 
   private normalize(fileName: string): string {
@@ -89,9 +102,11 @@ export class ComponentMetadataStore {
     const component = this.components.get(absFileName);
     if (component != null) {
       try {
-        component.info = this.analyzer.analyze(content, this.normalize(absFileName)); // TODO: Make this lazy...
+        // TODO: Make it lazy, on-demand.
+        component.info = this.analyzer?.analyze(content, this.normalize(absFileName));
       } catch {
         // Ignore errors for now
+        // TODO: Maybe add telemetry to collect such errors.
       }
       component.previews = this.parse(content, absFileName);
     }

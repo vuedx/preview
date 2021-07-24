@@ -32,6 +32,7 @@
   "author": "Rahul Kadyan <hey@znck.me>",
   "license": "MIT",
   "devDependencies": {
+    "@vuedx/analyze": "^0.6.0",
     "@rollup/plugin-json": "^4.1.0",
     "@types/debug": "^4.1.5",
     "typescript": "^4.1.3",
@@ -40,7 +41,6 @@
   "dependencies": {
     "@vitejs/plugin-vue": "^1.2.3",
     "@vue/compiler-sfc": "^3.1.1",
-    "@vuedx/analyze": "^0.6.0",
     "@vuedx/compiler-sfc": "^0.6.0",
     "@vuedx/preview-compiler": "workspace:*",
     "@vuedx/preview-provider": "workspace:*",
@@ -52,7 +52,14 @@
     "picomatch": "^2.2.2",
     "quick-lru": "^6.0.0",
     "sirv": "^1.0.10",
-    "vite": "^2.3.6",
-    "vue-docgen-api": "^4.34.2"
+    "vite": "^2.3.6"
+  },
+  "peerDependencies": {
+    "@vuedx/analyze": "^0.6.0"
+  },
+  "peerDependenciesMeta": {
+    "@vuedx/analyze": {
+      "optional": true
+    }
   }
 }

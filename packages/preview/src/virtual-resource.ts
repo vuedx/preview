@@ -1,26 +1,26 @@
 import { parse as parseQueryString } from 'querystring';
 
 export const enum ComponentResourceType {
-  ENTRY = '@preview/entry.js',
-  COMPONENT = '@preview/component.js',
-  META = '@preview/meta.js',
+  ENTRY = '__preview:resource/entry.js',
+  COMPONENT = '__preview:resource/component.js',
+  META = '__preview:resource/meta.js',
 }
 
-export const SHELL_PREFIX = `/@preview:shell`;
-export const IFRAME_PREFIX = `/@preview:iframe`;
+const PREFIX_RE = /^\/?__preview/;
+export const SHELL_PREFIX = `/__preview:shell`;
+export const IFRAME_PREFIX = `/__preview:iframe`;
 
 export const enum ResourceType {
-  LIST_COMPONENTS = '@preview/components.js',
-  USER_SETUP = '@preview/user/setup.js',
+  LIST_COMPONENTS = '__preview:resource/components.js',
+  USER_SETUP = '__preview:resource/user/setup.js',
 }
 
-export type ComponentResource = {
+export interface ComponentResource {
   type: ComponentResourceType;
   fileName: string;
   index?: number;
-};
+}
 
-const PREFIX_RE = /^\/?@preview\//;
 export function parsePreviewResource(uri: string): ComponentResource | undefined {
   if (PREFIX_RE.test(uri)) {
     uri = uri.replace(/^\/?/, '');
@@ -42,9 +42,10 @@ export function parsePreviewResource(uri: string): ComponentResource | undefined
   return undefined;
 }
 
-export function parseURI(
-  uri: string
-): { fileName: string; query: Record<string, string | boolean> } {
+export function parseURI(uri: string): {
+  fileName: string;
+  query: Record<string, string | boolean>;
+} {
   const index = uri.indexOf('?');
   if (index >= 0) {
     const fileName = uri.substr(0, index);

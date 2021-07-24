@@ -25,7 +25,16 @@ import {
   SHELL_PREFIX,
 } from './virtual-resource';
 
-function PreviewPlugin(): Plugin[] {
+export interface PreviewPluginOptions {
+  mode: 'standalone' | 'plugin';
+}
+
+const DEFAULTS: PreviewPluginOptions = {
+  mode: 'plugin',
+};
+
+function PreviewPlugin(options?: PreviewPluginOptions): Plugin[] {
+  const resolvedOptions = { ...DEFAULTS, ...options };
   const shellBasePath = getPreviewShellPath();
   const providerPath = getProviderPath();
   let store: ComponentMetadataStore;
@@ -35,6 +44,7 @@ function PreviewPlugin(): Plugin[] {
 
   return [
     {
+      /* Serve preview shell assets and iframe contents. */
       name: '@vuedx/preview:pre',
       enforce: 'pre',
       async configureServer(server) {
@@ -182,14 +192,15 @@ function PreviewPlugin(): Plugin[] {
           return providerPath;
         }
 
+        
         if (id === ResourceType.LIST_COMPONENTS) {
           return `/${ResourceType.LIST_COMPONENTS}`;
         }
-
+        
         if (id === ResourceType.USER_SETUP) {
           return `/${ResourceType.USER_SETUP}`;
         }
-
+        
         const resource = parsePreviewResource(id);
         if (resource != null) {
           return resourceToFile(resource);
@@ -251,7 +262,7 @@ function PreviewPlugin(): Plugin[] {
               return compiler.compileText(
                 [
                   `<${componentName}${props}>`,
-                  ` <component :is="$p.stub.static('Slot: default')" />`,
+                  ` <component :is="this.$p.stub.static('Slot: default')" />`,
                   `</${componentName}>`,
                 ].join('\n'),
                 Path.resolve(store.root, resource.fileName)
@@ -273,7 +284,9 @@ function PreviewPlugin(): Plugin[] {
 
       transformIndexHtml: {
         enforce: 'pre',
-        transform() {
+        transform(_, ctx) {
+          if (resolvedOptions.mode === 'plugin' && !ctx.path.startsWith('/__preview')) return [];
+
           return [
             {
               tag: 'script',
@@ -311,7 +324,6 @@ function PreviewPlugin(): Plugin[] {
 
         return undefined;
       },
-
       async configureServer(server) {
         const indexHtmlContent = genEntryHTML(shellBasePath);
         const rootDir = server.config.root;
@@ -323,7 +335,6 @@ function PreviewPlugin(): Plugin[] {
         server.watcher.on('all', (event, fileName) => {
           if (setupFiles.has(fileName)) {
             setupFile = fileName;
-            // TODO: Invalidate setup file
             server.ws.send({
               type: 'full-reload',
             });
@@ -338,15 +349,47 @@ function PreviewPlugin(): Plugin[] {
 
         server.middlewares.use(function ServePreviewShell(req, res, next) {
           if (req.method === 'GET' && req.url != null) {
-            // Serve all shell pages.
             const path = req.url.replace(/\?.*$/, '');
-            if (/^\/(|sandbox)\/?(\?.*)?$/.test(path)) {
-              return send(req, res, indexHtmlContent, 'html');
+            if (resolvedOptions.mode === 'plugin') {
+              if (path === '/__preview' || path.startsWith('/__preview/')) {
+                return send(req, res, indexHtmlContent, 'html');
+              }
+            } else {
+              if (/^\/(|sandbox)\/?(\?.*)?$/.test(path)) {
+                return send(req, res, indexHtmlContent, 'html');
+              }
             }
           }
 
           return next();
         });
+
+        const http = server.httpServer;
+        if (http != null && resolvedOptions.mode === 'plugin') {
+          http.on('listening', () => {
+            void Promise.resolve().then(() => {
+              const scheme =
+                server.config.server.https == null || server.config.server.https === false
+                  ? 'http'
+                  : 'https';
+              const address = http.address();
+              const port = typeof address !== 'string' && address != null ? address.port : 3000;
+              const portString =
+                scheme === 'http' && port === 80
+                  ? ''
+                  : scheme === 'https' && port === 443
+                  ? ''
+                  : `:${port}`;
+              const host =
+                typeof server.config.server.host === 'string'
+                  ? server.config.server.host
+                  : 'localhost';
+
+              console.log(`  Preview is enabled.`);
+              console.log(`  > Local: ${scheme}://${host}${portString}/__preview\n`);
+            });
+          });
+        }
 
         await loadVueFiles(rootDir, store);
       },

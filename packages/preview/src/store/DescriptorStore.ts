@@ -2,8 +2,8 @@ import { parse, SFCDescriptor } from '@vuedx/compiler-sfc';
 import * as FS from 'fs';
 
 export class DescriptorStore {
-  private cache = new Map<string, SFCDescriptor>();
-  private prevContent = new Map<string, string>();
+  private readonly cache = new Map<string, SFCDescriptor>();
+  private readonly prevContent = new Map<string, string>();
 
   get(fileName: string, content?: string): SFCDescriptor {
     const descriptor = this.cache.get(fileName);

@@ -14,7 +14,7 @@
       },
       "args": [
         "--extensionDevelopmentPath=${workspaceRoot}/extension",
-        "${workspaceRoot}/packages/example"
+        "${workspaceRoot}/example"
       ],
       "outFiles": ["${workspaceRoot}/extension/dist/*.js"]
     }
