@@ -1,5 +1,18 @@
 # @vuedx/preview
 
+## 0.3.0
+
+### Minor Changes
+
+- ff930e3: Use `/__preview` path prefix for plugin mode
+
+  BREAKING CHANGE: Internal virtual files also use `__preview` prefix, instead of `@preview`.
+
+### Patch Changes
+
+- Updated dependencies [ff930e3]
+  - @vuedx/preview-shell@0.3.0
+
 ## 0.2.4
 
 ### Patch Changes
