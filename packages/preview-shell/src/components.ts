@@ -23,13 +23,13 @@ window.addEventListener('preview:components' as any, (event: CustomEvent<Compone
 if (import.meta.env.DEV) {
   components.value = [
     {
-      id: 'component/Alert.vue',
+      id: 'component/Alert',
       name: 'Alert',
       path: 'component/Alert.vue',
       previews: [
-        { id: 1, name: 'One', device: 'freeform', deviceProps: {} },
+        { id: 1, name: 'One', device: 'freeform', deviceProps: { controls: true } },
         { id: 2, name: 'Two', device: 'mobile', deviceProps: {} },
-        { id: 3, name: 'Three', device: 'freeform', deviceProps: {} },
+        { id: 3, name: 'Three', device: 'desktop', deviceProps: {} },
       ],
     },
     {
@@ -37,10 +37,23 @@ if (import.meta.env.DEV) {
       name: 'Button',
       path: 'component/in-a-very/very/very/very/deep/directory/Button.vue',
       previews: [
-        { id: 1, name: 'One', device: 'freeform', deviceProps: {} },
+        { id: 1, name: 'One', device: 'freeform', deviceProps: { controls: true } },
         { id: 2, name: 'Two', device: 'mobile', deviceProps: {} },
-        { id: 3, name: 'Three', device: 'freeform', deviceProps: {} },
+        { id: 3, name: 'Three', device: 'desktop', deviceProps: {} },
       ],
     },
-  ];
+
+    ...Array(30)
+      .fill(null)
+      .map<ComponentMetadata>((_, i) => ({
+        id: `component/Example${i}`,
+        name: `Example${i}`,
+        path: `components/${i}/Example${i}.vue`,
+        previews: [
+          { id: 1, name: 'One', device: 'freeform', deviceProps: { controls: true } },
+          { id: 2, name: 'Two', device: 'mobile', deviceProps: {} },
+          { id: 3, name: 'Three', device: 'desktop', deviceProps: {} },
+        ] as PreviewMetadata[],
+      })),
+  ].sort(() => (Math.random() > 0.5 ? 1 : -1));
 }

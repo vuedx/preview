@@ -78,7 +78,19 @@ We are exploring automatic generation using static code analysis, and **active l
 
 ### Mocking HTTP Requests
 
-> TODO: document this.
+#### Delayed response
+
+Use `$p.http.delayed()` helper to stub a delayed response.
+
+```vue
+<preview>
+  <setup 
+    :requests="{
+      '/response/delayed': $p.http.delayed(1000)
+    }"
+  />
+</preview>
+```
 
 ### Importing components in previews
 

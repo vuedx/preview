@@ -1,3 +1,16 @@
+import device_iPhone_11_Portrait from '../assets/iPhone-11-Portrait.png';
+import frame_iPhone_11_Portrait from '../assets/iPhone-11-Portrait.svg';
+
+import device_iPhone_11_Landscape from '../assets/iPhone-11-Landscape.png';
+import frame_iPhone_11_Landscape from '../assets/iPhone-11-Landscape.svg';
+
+import device_iPad_Pro_13_Portrait from '../assets/iPad-Pro-13-Portrait.png';
+import device_iPad_Pro_13_Landscape from '../assets/iPad-Pro-13-Landscape.png';
+
+import device_MacBook_Pro_16 from '../assets/MacBook-Pro-16.png';
+
+const isFirefox = /(firefox)/i.test(window.navigator.userAgent);
+
 export interface DeviceFrame {
   photo: string;
   mask?: string;
@@ -16,23 +29,10 @@ interface RawDeviceSpecs extends DeviceSpecs {
   ratio: number;
 }
 
-import device_iPhone_11_Portrait from '../assets/iPhone-11-Portrait.png';
-import frame_iPhone_11_Portrait from '../assets/iPhone-11-Portrait.svg';
-
-import device_iPhone_11_Landscape from '../assets/iPhone-11-Landscape.png';
-import frame_iPhone_11_Landscape from '../assets/iPhone-11-Landscape.svg';
-
-import device_iPad_Pro_13_Portrait from '../assets/iPad-Pro-13-Portrait.png';
-import device_iPad_Pro_13_Landscape from '../assets/iPad-Pro-13-Landscape.png';
-
-import device_MacBook_Pro_16 from '../assets/MacBook-Pro-16.png';
-
-const isFirefox = /(firefox)/i.test(window.navigator.userAgent);
-
-const devices: RawDeviceSpecs[] = [
+export const devices: RawDeviceSpecs[] = [
   {
     name: 'iPhone 11',
-    aliases: ['iPhone', 'iPhone 11', 'phone'],
+    aliases: ['iPhone', 'iPhone 11', 'phone', 'mobile'],
     width: 828,
     height: 1792,
     ratio: 2,

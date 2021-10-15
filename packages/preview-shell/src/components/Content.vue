@@ -2,6 +2,7 @@
 import { computed, defineComponent } from 'vue';
 
 export default defineComponent({
+  name: 'Content',
   props: {
     relativeFileName: { type: String, required: true },
     index: { type: Number },

@@ -1,19 +1,15 @@
 // eslint-disable-next-line @typescript-eslint/prefer-ts-expect-error
 // @ts-ignore - rollup-plugin-dts does not work with export *
 import { getCurrentInstance, onUnmounted } from 'vue';
+import { getActiveComponent } from './activeComponent';
 import { notify } from './communication';
-type RequestHandler = (
-  params: Record<string, string>,
-  options: RequestInit & {
-    query: Record<string, string | string[]>;
-  }
-) => any;
+type RequestHandler = (request: Request) => any;
 
 export type RequestOptions = Record<string, RequestHandler | Record<string, any>>;
 
 interface InterceptorRecord {
-  method: Set<string>;
-  url: string;
+  name: string;
+  matcher(request: Request): Promise<boolean> | boolean;
   handler: RequestHandler;
 }
 
@@ -21,18 +17,68 @@ const state: { interceptors: InterceptorRecord[]; warned: Set<string> } = {
   interceptors: [],
   warned: new Set('/'),
 };
-const REQUEST_RE = /^((?:GET|POST|PUT|DELETE|HEAD)(?:\|(?:GET|POST|PUT|DELETE|HEAD))*)?\s?(.+)$/;
+const REQUEST_RE = /^(GET|POST|PUT|DELETE|HEAD)(\|(GET|POST|PUT|DELETE|HEAD))*\s+/i;
+const GRAPHQL_RE = /^(QUERY|MUTATION)\s+/i;
 
 /**
  * @param options register request handlers/interceptors.
  */
 export function useRequests(options: RequestOptions): void {
   state.interceptors = Object.entries(options).map(([key, value]): InterceptorRecord => {
-    const result = REQUEST_RE.exec(key);
+    const handler = (typeof value === 'function' ? value : () => value) as any;
+    const graphql = GRAPHQL_RE.exec(key);
+    if (graphql != null) {
+      const [type, url, pattern] = key.split(/[ ]+/) as [string, string] | [string, string, string];
+      return {
+        name: key,
+        matcher: async (request) => {
+          if (!matches(request.url, url)) return false;
+
+          let query: string | null = null;
+          if (type?.toUpperCase() === 'QUERY') {
+            if (request.method === 'GET') {
+              query = getSearchParams(request.url).get('query');
+            }
+          }
+
+          if (request.method === 'POST') {
+            try {
+              const body = await request.clone().json();
+              query = typeof body.query === 'string' ? body.query : null;
+            } catch {}
+          }
+
+          if (query != null) {
+            if (pattern == null) return true;
+            else
+              return matchPattern(query.replace(/[ \r\n]/g, ''), pattern.replace(/[ \r\n]/g, ''));
+          }
+
+          return false;
+        },
+        handler,
+      };
+    }
+    const http = REQUEST_RE.exec(key);
+    if (http != null) {
+      const [type, url] = key.split(/[ ]+/) as [string, string];
+      const methods = new Set(type.toUpperCase().split('|'));
+
+      console.log(http);
+
+      return {
+        name: key,
+        matcher: (request) => methods.has(request.method) && matches(request.url, url),
+        handler,
+      };
+    }
+
     return {
-      method: new Set(result?.[1]?.split('|') ?? ['GET']),
-      url: result?.[2] ?? key,
-      handler: (typeof value === 'function' ? value : () => value) as any,
+      name: key,
+      matcher: (request) => {
+        return matches(request.url, key);
+      },
+      handler,
     };
   });
 
@@ -43,6 +89,28 @@ export function useRequests(options: RequestOptions): void {
   }
 }
 
+function matches(url: string, pattern: string): boolean {
+  if (pattern === '*') return true;
+  if (pattern.includes('*')) {
+    return matchPattern(pattern.startsWith('/') ? getPathName(url) : url, pattern);
+  }
+  if (pattern.startsWith('/')) {
+    return getPathName(url) === pattern;
+  }
+
+  return url === pattern;
+}
+
+function matchPattern(text: string, pattern: string): boolean {
+  if (pattern.includes('*')) {
+    const RE = new RegExp(`^${pattern.replace(/\*/g, '.*?')}$`);
+
+    return RE.test(text);
+  } else {
+    return text === pattern;
+  }
+}
+
 /**
  * Install fetch interceptors.
  */
@@ -50,12 +118,17 @@ export function installFetchInterceptor(): void {
   const fetch = window.fetch;
 
   window.fetch = async function (input: RequestInfo, init?: RequestInit): Promise<Response> {
-    const url = typeof input === 'string' ? input : input.url;
-    const method = init?.method ?? (typeof input === 'string' ? 'GET' : input.method);
-    const interceptor = getInterceptor(method, url);
+    const request =
+      input instanceof Request ? new Request(input.clone(), init) : new Request(input, init);
+    const interceptor = await getInterceptor(request);
 
     if (interceptor != null) {
-      const result = await interceptor.handler({}, { ...(init ?? { url, method }), query: {} });
+      const active = getActiveComponent();
+      const group = active.name != null ? `[${active.name}] ` : '';
+      console.groupCollapsed(`${group}Request handled by: ${interceptor.name}`);
+      console.debug(request);
+      console.groupEnd();
+      const result = await interceptor.handler(request);
       const encode = (result: unknown): Response => {
         if (result instanceof Response) return result;
         else if (typeof result === 'string')
@@ -72,30 +145,56 @@ export function installFetchInterceptor(): void {
           });
       };
 
-      if (result.__esModule === true && result.default != null) {
-        return encode(result.default);
-      }
+      const response = encode(result.default != null ? result.default : result);
 
-      return encode(result);
+      const copy = response.clone();
+
+      const body =
+        copy.headers.get('Content-Type') === 'application/json'
+          ? await copy.json()
+          : await copy.text();
+
+      console.groupCollapsed(`${group}Response from: ${interceptor.name}`);
+      console.debug(copy);
+      console.debug(body);
+      console.groupEnd();
+      return response;
     }
 
-    const id = `${method} ${url}`;
+    const id = `${request.method} ${request.url}`;
     if (!state.warned.has(id)) {
       state.warned.add(id);
-      notify('missing-request-handler', { method, url });
+      notify('missing-request-handler', { request, body: await request.clone().text() });
     }
 
-    return fetch(input, init);
+    return fetch(request);
   };
 }
 
-function getInterceptor(method: string, url: string): InterceptorRecord | undefined {
-  return (
-    state.interceptors.find(
-      (interceptor) => interceptor.method.has(method) && interceptor.url === url
-    ) ??
-    state.interceptors.find(
-      (interceptor) => interceptor.method.has(method) && interceptor.url === '*'
-    )
-  );
+async function getInterceptor(request: Request): Promise<InterceptorRecord | null> {
+  for (const interceptor of state.interceptors) {
+    if (await interceptor.matcher(request)) {
+      return interceptor;
+    }
+  }
+
+  return null;
+}
+
+function getPathName(url: string): string {
+  try {
+    return new URL(url).pathname;
+  } catch {
+    return url.replace(/^[^/]+:\/\/[^/]+/, '');
+  }
+}
+
+function getSearchParams(url: string): URLSearchParams {
+  try {
+    return new URL(url).searchParams;
+  } catch {
+    const index = url.indexOf('?');
+
+    return index < 0 ? new URLSearchParams() : new URLSearchParams(url.substr(index + 1));
+  }
 }

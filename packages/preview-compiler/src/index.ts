@@ -33,8 +33,8 @@ function createPreviewSetupTransform(output: SetupOutput): NodeTransform {
               prop.arg.content === 'requests' ||
               prop.arg.content === 'state'
             ) {
-              if (isSimpleExpressionNode(prop.exp)) {
-                output[prop.arg.content] = prop.exp.content;
+              if (prop.exp != null) {
+                output[prop.arg.content] = prop.exp.loc.source;
               }
             }
           }
@@ -74,30 +74,36 @@ export function compile(
 
   const preamble = getCode(
     result.preamble,
-    `import { defineComponent, reactive, inject } from ${JSON.stringify(imports['vue'] ?? 'vue')}`,
-    `import { provider, useRequests, useComponents, installFetchInterceptor } from ${JSON.stringify(
+    `import * as _Vue from ${JSON.stringify(imports['vue'] ?? 'vue')}`,
+    `import * as _Preview from ${JSON.stringify(
       imports['@vuedx/preview-provider'] ?? '@vuedx/preview-provider'
     )}`,
     `import _component_self from '${componentFileName.replace(/\\/g, '/')}'`,
-    `installFetchInterceptor()`,
+    `_Preview.installFetchInterceptor()`,
     result.code
   );
 
-  const source = `defineComponent({
-  name: 'Preview',
+  const source = `_Vue.defineComponent({
+  name: 'Preview(${componentName}):${String(attrs['name'] ?? 'unnamed')}',
+  inheritAttrs: false,
+  _file: ${JSON.stringify(componentFileName)},
   components: { "${componentName}": _component_self },
   ${setup.async === true ? 'async ' : ''}setup() {
-    const preview = { 
-      ...provider,
+    _Preview.setActiveComponent({
+      ...(${JSON.stringify(attrs)}),
+      componentName: "${componentName}",
+    })
+    const $p = { 
+      ..._Preview.provider,
       attrs: ${JSON.stringify(attrs)}, 
-      state: reactive(overrides.state != null ? overrides.state : ${setup.state}), 
-      x: inject('preview:UserProviders', null),
+      state: _Vue.reactive(_overrides.state != null ? _overrides.state : ${setup.state}), 
+      x: _Vue.inject('preview:UserProviders', null),
     }
-  
-    useRequests({ ...(${setup.requests}), ...overrides.requests })
-    useComponents({...(${setup.components}), ...overrides.components})
+    
+    _Preview.useRequests({ ...(${setup.requests}), ..._overrides.requests })
+    _Preview.useComponents({...(${setup.components}), ..._overrides.components})
 
-    return { preview, p: preview }
+    return { preview: $p }
   },
   created() {
     this.$p = this.preview
@@ -108,14 +114,14 @@ export function compile(
   if (hmrId != null) {
     return getCode(
       preamble,
-      `const overrides = {}`,
+      `const _overrides = {}`,
       `const _preview_main = ${source}`,
       generateHMR(hmrId),
       `export default _preview_main`
     );
   } else if (allowOverrides != null) {
     const fn = typeof allowOverrides === 'string' ? allowOverrides : '';
-    return getCode(preamble, `export default (overrides = {}) => ${fn}(${source})`);
+    return getCode(preamble, `export default (_overrides = {}) => ${fn}(${source})`);
   } else {
     return getCode(preamble, `export default (${source})`);
   }

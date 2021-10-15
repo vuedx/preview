@@ -5,4 +5,7 @@ module.exports = /** @type {import('vite').UserConfig} */ ({
   css: {
     modules: false,
   },
+  define: {
+    __VUE_PROD_DEVTOOLS__: JSON.stringify(true),
+  },
 });

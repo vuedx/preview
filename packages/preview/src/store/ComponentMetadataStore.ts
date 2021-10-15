@@ -1,9 +1,9 @@
 import type { ComponentInfo, createFullAnalyzer } from '@vuedx/analyze';
 import type { SFCBlock } from '@vuedx/compiler-sfc';
-import * as Path from 'path';
-import * as FS from 'fs';
-import type { DescriptorStore } from './DescriptorStore';
 import createDebugger from 'debug';
+import * as Path from 'path';
+import type { DescriptorStore } from './DescriptorStore';
+import type { FileSystemHost } from './FileSystemHost';
 
 const debug = createDebugger('@vuedx/preview:component-metadata');
 
@@ -32,7 +32,11 @@ export class ComponentMetadataStore {
 
   private analyzer?: ReturnType<typeof createFullAnalyzer>;
 
-  constructor(public root: string, private readonly descriptors: DescriptorStore) {
+  constructor(
+    public root: string,
+    private readonly descriptors: DescriptorStore,
+    private readonly fs: FileSystemHost
+  ) {
     import('@vuedx/analyze')
       .then((analyze) => {
         debug('Static code analyze is ready');
@@ -43,10 +47,10 @@ export class ComponentMetadataStore {
       });
   }
 
-  isSupported(fileName: string): boolean {
+  public isSupported(fileName: string): boolean {
     return (
       (Path.isAbsolute(fileName) ? fileName.startsWith(this.root) : !fileName.startsWith('..')) &&
-      fileName.endsWith('.vue')
+      (fileName.endsWith('.vue') || fileName.endsWith('.vue.p'))
     );
   }
 
@@ -59,12 +63,17 @@ export class ComponentMetadataStore {
     return fileName.replace(/\\/g, '/');
   }
 
-  get(fileName: string): Readonly<ComponentMetadata | undefined> {
+  private getVueFile(fileName: string): string {
+    return fileName.replace(/\.vue\.p$/, '.vue');
+  }
+
+  public async get(fileName: string): Promise<Readonly<ComponentMetadata | undefined>> {
+    fileName = this.getVueFile(fileName);
     const absFileName = this.getAbsolutePath(fileName);
     const metadata = this.components.get(absFileName);
     if (metadata == null) {
-      if (this.isSupported(fileName) && FS.existsSync(absFileName)) {
-        this.add(absFileName, FS.readFileSync(absFileName, 'utf-8'));
+      if (this.isSupported(fileName) && (await this.fs.exists(absFileName))) {
+        await this.add(absFileName);
         const metadata = this.components.get(absFileName);
         if (metadata != null) return metadata;
       }
@@ -72,7 +81,8 @@ export class ComponentMetadataStore {
     return metadata;
   }
 
-  add(fileName: string, content: string): void {
+  public async add(fileName: string): Promise<void> {
+    fileName = this.getVueFile(fileName);
     const absFileName = this.getAbsolutePath(fileName);
     const relativeFileName = this.normalize(Path.relative(this.root, absFileName));
     const id = relativeFileName.replace(/\.vue$/, '');
@@ -87,15 +97,18 @@ export class ComponentMetadataStore {
       previews: [],
     });
 
-    this.reload(fileName, content);
+    await this.reload(fileName);
   }
 
-  remove(fileName: string): void {
+  public remove(fileName: string): void {
+    fileName = this.getVueFile(fileName);
     this.text = '';
     this.components.delete(this.getAbsolutePath(fileName));
   }
 
-  reload(fileName: string, content: string): void {
+  public async reload(fileName: string): Promise<void> {
+    fileName = this.getVueFile(fileName);
+
     this.text = '';
 
     const absFileName = this.getAbsolutePath(fileName);
@@ -103,41 +116,36 @@ export class ComponentMetadataStore {
     if (component != null) {
       try {
         // TODO: Make it lazy, on-demand.
-        component.info = this.analyzer?.analyze(content, this.normalize(absFileName));
+        void this.analyzer;
+        // component.info = this.analyzer?.analyze(
+        //   await this.fs.readFile(fileName),
+        //   this.normalize(absFileName)
+        // );
       } catch {
         // Ignore errors for now
         // TODO: Maybe add telemetry to collect such errors.
       }
-      component.previews = this.parse(content, absFileName);
+      component.previews = await this.parse(fileName);
     }
   }
 
-  private parse(content: string, absFileName: string): PreviewMetadata[] {
-    const descriptor = this.descriptors.get(absFileName, content);
-    const blocks: SFCBlock[] = descriptor.customBlocks;
-    let index = 0;
+  private async parse(fileName: string): Promise<PreviewMetadata[]> {
+    const descriptor = await this.descriptors.get(fileName);
+    const blocks: SFCBlock[] = descriptor.previews;
 
-    return blocks
-      .map((block, instanceId): PreviewMetadata | undefined => {
-        if (block.type === 'preview') {
-          index += 1;
+    return blocks.map((block, instanceId): PreviewMetadata => {
+      const { name, device, ...props } = block.attrs;
 
-          const { name, device, ...props } = block.attrs;
-
-          return {
-            id: instanceId,
-            name: typeof name === 'string' ? name : `Preview ${index}`,
-            device: typeof device === 'string' ? device : 'freeform',
-            deviceProps: props,
-          };
-        }
-
-        return undefined;
-      })
-      .filter((item): item is PreviewMetadata => item != null);
+      return {
+        id: instanceId,
+        name: typeof name === 'string' ? name : `Preview ${instanceId}`,
+        device: typeof device === 'string' ? device : 'freeform',
+        deviceProps: props,
+      };
+    });
   }
 
-  getText(): string {
+  public getText(): string {
     if (this.text !== '') {
       return this.text;
     }

@@ -1,28 +1,23 @@
 <script lang="ts">
+import { computed, defineComponent, PropType, ref, watch } from 'vue';
 import type { DeviceSpecs } from '../devices';
-import { computed, defineComponent, PropType, ref } from 'vue';
 import BaseDevice from './BaseDevice.vue';
+import ZoomSelector from './ZoomSelector.vue';
 export default defineComponent({
-  components: { BaseDevice },
+  components: { BaseDevice, ZoomSelector },
   props: {
     device: {
       type: null as unknown as PropType<DeviceSpecs>,
       required: true,
     },
+    zoom: {
+      type: Number,
+    },
   },
   setup(props) {
     const levels = [25, 50, 67, 80, 90, 100, 110, 120, 133, 150, 170, 200, 240, 300];
-    const zoom = ref(50);
+    const zoom = ref(props.zoom ?? 50);
     const orientation = ref('default');
-
-    try {
-      const expected = Math.min(
-        (window.innerHeight / props.device.height) * 80,
-        (window.innerWidth / props.device.width) * 80
-      );
-      const index = levels.findIndex((level) => level > expected);
-      zoom.value = levels[Math.max(0, index - 1)] ?? 1;
-    } catch {}
 
     const offsetSize = computed(() => {
       if (orientation.value === 'landscape') {
@@ -45,6 +40,32 @@ export default defineComponent({
       return { width: props.device.width, height: props.device.height };
     });
 
+    function autoZoom() {
+      try {
+        if (!Number.isFinite(props.zoom)) {
+          const expected = Math.min(
+            (window.innerHeight / size.value.height) * 48,
+            (window.innerWidth / size.value.width) * 48
+          );
+          const index = levels.findIndex((level) => level > expected);
+          zoom.value = levels[Math.max(0, index - 1)]!;
+        }
+      } catch {}
+    }
+
+    autoZoom();
+
+    watch(
+      () => props.zoom,
+      (value) => {
+        if (value == null) {
+          autoZoom();
+        } else {
+          zoom.value = value;
+        }
+      }
+    );
+
     const orientedBezels = computed(() => {
       if (orientation.value === 'landscape') {
         return {
@@ -63,7 +84,7 @@ export default defineComponent({
 </script>
 
 <template>
-  <div class="configured-device">
+  <div class="configured-device" :style="{ maxWidth: `${(offsetSize.width * zoom) / 100}px` }">
     <div
       :style="{
         height: `${(offsetSize.height * zoom) / 100}px`,
@@ -93,9 +114,9 @@ export default defineComponent({
 
     <header>
       <div class="controls">
-        <select v-model.number="zoom">
-          <option v-for="level of levels" :value="level">{{ level }}%</option>
-        </select>
+        <slot name="pre-controls" />
+
+        <ZoomSelector v-model="zoom" />
 
         <div class="orientation" v-if="device.frames.landscape">
           <select v-model="orientation">
@@ -103,6 +124,8 @@ export default defineComponent({
             <option value="landscape">Landsape</option>
           </select>
         </div>
+
+        <slot name="post-controls" />
       </div>
     </header>
   </div>
@@ -112,16 +135,22 @@ export default defineComponent({
 .configured-device {
   display: flex;
   flex-direction: column;
+  overflow: visible;
 }
 
-.controls {
+.configured-device .controls {
+  position: relative;
+  z-index: 100;
   opacity: 0;
   display: flex;
   flex-direction: row;
-  align-items: center;
-  justify-content: center;
   margin-top: 0.5rem;
   gap: 1rem;
+  background-color: white;
+  padding: 8px;
+  border-radius: 4px;
+  width: fit-content;
+  box-shadow: 0px 12px 7px -10px rgba(0, 0, 0, 0.75);
 }
 
 .configured-device:hover .controls,

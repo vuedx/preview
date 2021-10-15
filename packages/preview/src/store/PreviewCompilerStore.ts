@@ -3,10 +3,11 @@ import { compile } from '@vuedx/preview-compiler';
 import crypto from 'crypto';
 
 export class PreviewCompilerStore {
-  constructor(private descriptors: DescriptorStore) {}
+  constructor(private readonly descriptors: DescriptorStore) {}
 
-  compile(fileName: string, index: number): string {
-    const block = this.descriptors.get(fileName).customBlocks[index];
+  async compile(fileName: string, index: number): Promise<string> {
+    const descriptor = await this.descriptors.get(fileName);
+    const block = descriptor.previews[index];
     if (block == null) return `throw new Error('No such preview: ${fileName} { index: ${index} }')`;
 
     return this.compileText(block.content, fileName, `${fileName}:${index}`, block.attrs);
