@@ -1,7 +1,8 @@
 <script lang="ts">
 import Device from '../components/Device.vue';
 import { defineComponent, ref, watchEffect } from 'vue';
-import { ComponentMetadata, components } from '../components';
+import type { ComponentMetadata } from '../components';
+import { components } from '../components';
 import Content from '../components/Content.vue';
 export default defineComponent({
   props: {

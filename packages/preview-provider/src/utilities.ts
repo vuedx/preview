@@ -193,6 +193,15 @@ export const http = createFunctionObject(
     send: (body: BodyInit, status: number = 200) =>
       new Response(body, { status, statusText: STATUS_TEXTS[status] }),
     create: (body?: BodyInit, init?: ResponseInit) => new Response(body, init),
+    delayed: async (delay: number, body?: BodyInit, init?: ResponseInit) => {
+      return await new Promise<Response>((resolve) => {
+        if (Number.isFinite(delay)) {
+          setTimeout(() => {
+            resolve(new Response(body, init));
+          }, delay);
+        }
+      });
+    },
   }
 );
 

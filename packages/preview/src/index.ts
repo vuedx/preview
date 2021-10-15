@@ -1,4 +1,3 @@
-import type { SFCBlock, SFCDescriptor } from '@vuedx/compiler-sfc';
 import glob from 'fast-glob';
 import * as FS from 'fs';
 import * as Path from 'path';
@@ -12,6 +11,7 @@ import {
 } from './generators';
 import { ComponentMetadataStore } from './store/ComponentMetadataStore';
 import { DescriptorStore } from './store/DescriptorStore';
+import type { FileSystemHost } from './store/FileSystemHost';
 import { PreviewCompilerStore } from './store/PreviewCompilerStore';
 import { getComponentName, getPreviewShellPath, getPropValue, getProviderPath } from './utils';
 import {
@@ -40,7 +40,11 @@ function PreviewPlugin(options?: PreviewPluginOptions): Plugin[] {
   let store: ComponentMetadataStore;
   let compiler: PreviewCompilerStore;
   let setupFile: string | undefined;
-  const descriptors = new DescriptorStore();
+  const fsHost: FileSystemHost = {
+    exists: async (fileName) => FS.existsSync(fileName),
+    readFile: async (fileName) => await FS.promises.readFile(fileName, 'utf-8'),
+  };
+  const descriptors = new DescriptorStore(fsHost);
 
   return [
     {
@@ -77,37 +81,19 @@ function PreviewPlugin(options?: PreviewPluginOptions): Plugin[] {
     },
     {
       name: '@vuedx/preview',
-      async handleHotUpdate({ file, modules: mods, read, server }) {
-        if (file.endsWith('.vue')) {
-          const affectedModules = new Set<ModuleNode | null | undefined>(
-            mods.filter((mod) => {
-              if (mod.id != null) return !mod.id.includes('?vue&type=preview');
-              return true;
-            })
-          );
+      async handleHotUpdate({ file, modules: mods, server }) {
+        if (file.endsWith('.vue') || file.endsWith('.vue.p')) {
+          file = file.replace(/\.p$/, '');
 
-          const content = await read();
-
-          const prevDescriptor = descriptors.get(file);
-          const prevPreviews = getPreviewsBlocks(prevDescriptor);
-          const nextDescriptor = descriptors.set(file, content);
-          const nextPreviews = getPreviewsBlocks(nextDescriptor);
-
-          const base = resourceToID({
-            type: ComponentResourceType.COMPONENT,
-            fileName: Path.relative(server.config.root, file),
-          });
-
-          if (nextPreviews.length > 0) {
-            const m = await server.moduleGraph.getModuleByUrl(base);
-            if (m != null) server.moduleGraph.invalidateModule(m);
-          }
+          const prevPreviews = descriptors.getOrNull(file)?.previews ?? [];
+          const nextPreviews = (await descriptors.reload(file)).previews;
 
           const added = new Set<number | undefined>();
           const removed = new Set<number | undefined>();
           const updated = new Set<number>();
           const unchanged = new Set<number>();
 
+          // TODO: Fix indices because
           for (let i = 0; i < Math.max(prevPreviews.length, nextPreviews.length); ++i) {
             const prev = prevPreviews[i];
             const next = nextPreviews[i];
@@ -124,11 +110,15 @@ function PreviewPlugin(options?: PreviewPluginOptions): Plugin[] {
           }
 
           const prevIndexContent = store.getText();
-          store.reload(file, content);
+          await store.reload(file);
           const nextIndexContent = store.getText();
-          const ids = new Set<string>();
+
+          const affectedModules = new Set(mods);
           if (prevIndexContent !== nextIndexContent) {
-            ids.add(ResourceType.LIST_COMPONENTS);
+            const mod =
+              (await server.moduleGraph.getModuleById(ResourceType.LIST_COMPONENTS)) ??
+              (await server.moduleGraph.getModuleByUrl(`/${ResourceType.LIST_COMPONENTS}`));
+            if (mod != null) affectedModules.add(mod);
           }
 
           const prevCount = prevPreviews.filter((block) => block != null).length;
@@ -142,39 +132,45 @@ function PreviewPlugin(options?: PreviewPluginOptions): Plugin[] {
 
           const fileName = Path.relative(store.root, file);
 
-          updated.forEach((index) => {
-            ids.add(
-              resourceToID({
+          await Promise.all(
+            Array.from(updated).map(async (index) => {
+              const id = resourceToID({
                 type: ComponentResourceType.COMPONENT,
                 fileName,
                 index,
-              })
-            );
-          });
-
-          removed.forEach((index) => {
-            ids.add(
-              resourceToID({
+              });
+              const url = resourceToFile({
                 type: ComponentResourceType.COMPONENT,
                 fileName,
                 index,
-              })
-            );
-          });
-
-          const modules = await Promise.all(
-            Array.from(ids).map(
-              async (id) =>
-                server.moduleGraph.getModuleById(id) ??
-                (await server.moduleGraph.getModuleByUrl(`/${id}`))
-            )
+              });
+              const mod =
+                (await server.moduleGraph.getModuleById(id)) ??
+                (await server.moduleGraph.getModuleByUrl(url));
+              if (mod != null) affectedModules.add(mod);
+              else console.warn(`Module not found: ${id}`);
+            })
           );
 
-          modules.forEach((m) => {
-            if (m != null) {
-              affectedModules.add(m);
-            }
-          });
+          await Promise.all(
+            Array.from(removed).map(async (index) => {
+              const id = resourceToID({
+                type: ComponentResourceType.COMPONENT,
+                fileName,
+                index,
+              });
+              const url = resourceToFile({
+                type: ComponentResourceType.COMPONENT,
+                fileName,
+                index,
+              });
+              const mod =
+                (await server.moduleGraph.getModuleById(id)) ??
+                (await server.moduleGraph.getModuleByUrl(url));
+
+              if (mod != null) server.moduleGraph.invalidateModule(mod);
+            })
+          );
 
           return Array.from(affectedModules).filter((m): m is ModuleNode => m != null);
         }
@@ -183,24 +179,23 @@ function PreviewPlugin(options?: PreviewPluginOptions): Plugin[] {
       },
 
       configResolved(config) {
-        store = new ComponentMetadataStore(config.root, descriptors);
+        store = new ComponentMetadataStore(config.root, descriptors, fsHost);
         compiler = new PreviewCompilerStore(descriptors);
       },
 
       async resolveId(id, importer) {
         if (id === '@vuedx/preview-provider') {
-          return providerPath;
+          return '@vuedx/preview-provider';
         }
 
-        
         if (id === ResourceType.LIST_COMPONENTS) {
           return `/${ResourceType.LIST_COMPONENTS}`;
         }
-        
+
         if (id === ResourceType.USER_SETUP) {
           return `/${ResourceType.USER_SETUP}`;
         }
-        
+
         const resource = parsePreviewResource(id);
         if (resource != null) {
           return resourceToFile(resource);
@@ -218,8 +213,10 @@ function PreviewPlugin(options?: PreviewPluginOptions): Plugin[] {
         return undefined;
       },
 
-      load(id) {
+      async load(id) {
         switch (id) {
+          case '@vuedx/preview-provider':
+            return await FS.promises.readFile(providerPath, 'utf-8');
           case `/${ResourceType.USER_SETUP}`: {
             return setupFile != null
               ? [
@@ -251,7 +248,7 @@ function PreviewPlugin(options?: PreviewPluginOptions): Plugin[] {
 
           case ComponentResourceType.COMPONENT: {
             if (resource.index == null) {
-              const metadata = store.get(resource.fileName);
+              const metadata = await store.get(resource.fileName);
               const componentName = getComponentName(resource.fileName);
               const props =
                 metadata?.info?.props
@@ -276,7 +273,7 @@ function PreviewPlugin(options?: PreviewPluginOptions): Plugin[] {
             return genPreviewAppEntryScript(
               store.root,
               resource,
-              descriptors.get(Path.resolve(store.root, resource.fileName))
+              await descriptors.get(Path.resolve(store.root, resource.fileName))
             );
           }
         }
@@ -342,7 +339,7 @@ function PreviewPlugin(options?: PreviewPluginOptions): Plugin[] {
             if (event === 'unlink') {
               store.remove(fileName);
             } else if (event === 'add') {
-              store.add(fileName, FS.readFileSync(fileName, { encoding: 'utf-8' }));
+              void store.add(fileName);
             }
           }
         });
@@ -417,16 +414,10 @@ async function loadVueFiles(root: string, store: ComponentMetadataStore): Promis
   }).then(async (files: string[]): Promise<void> => {
     await Promise.all(
       files.map(async (fileName) => {
-        store.add(fileName, await FS.promises.readFile(fileName, { encoding: 'utf-8' }));
+        await store.add(fileName);
       })
     );
   });
-}
-
-function getPreviewsBlocks(descriptor: SFCDescriptor): Array<SFCBlock | null> {
-  return descriptor.customBlocks.map((block: SFCBlock) =>
-    block.type === 'preview' ? block : null
-  );
 }
 
 function areAttrsEqual(

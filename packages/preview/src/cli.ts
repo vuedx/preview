@@ -115,5 +115,8 @@ async function runServe(options: ServeArgs): Promise<void> {
     configFile: options.config,
   });
 
+  // TODO: Use a better logger
+  console.log(`Working Dir: ${options.root}`);
+
   await server.listen(options.port);
 }

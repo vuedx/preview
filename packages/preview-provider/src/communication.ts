@@ -1,6 +1,6 @@
 export function notify(
   event: 'missing-request-handler',
-  payload: { method: string; url: string }
+  payload: any
 ): void;
 
 export function notify(event: string, payload: any): void {

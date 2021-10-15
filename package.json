@@ -41,8 +41,8 @@
   },
   "pnpm": {
     "overrides": {
-      "vite": "^2.3.6",
-      "typescript": "^4.3.2"
+      "vite": "2.5.0",
+      "typescript": "4.3.2"
     }
   }
 }

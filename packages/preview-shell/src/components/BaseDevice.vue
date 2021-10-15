@@ -1,6 +1,6 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
-import { DeviceSpecs } from '../devices';
+import type { DeviceSpecs } from '../devices';
 
 export default defineComponent({
   props: {

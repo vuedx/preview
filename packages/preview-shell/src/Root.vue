@@ -1,16 +1,11 @@
-<script>
-import { defineComponent } from 'vue';
+<script lang="ts" setup>
 import DeviceFrameHack from './components/device-frame-hack.vue';
-
-export default defineComponent({
-  components: { DeviceFrameHack },
-});
 </script>
 
 <template>
   <div>
     <RouterView />
-    <device-frame-hack />
+    <DeviceFrameHack />
   </div>
 </template>
 

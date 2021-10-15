@@ -1,10 +1,11 @@
 <script lang="ts">
 import ConfiguredDevice from './ConfiguredDevice.vue';
 import BaseDevice from './BaseDevice.vue';
-import { computed, defineComponent } from 'vue';
+import DeviceSelector from './DeviceSelector.vue';
+import { computed, defineComponent, ref, watch } from 'vue';
 import FreeformDevice from './FreeformDevice.vue';
 
-import devices from '../devices';
+import devicesMap, { devices } from '../devices';
 export default defineComponent({
   inheritAttrs: false,
   props: {
@@ -13,28 +14,40 @@ export default defineComponent({
   components: {
     ConfiguredDevice,
     BaseDevice,
+    DeviceSelector,
     FreeformDevice,
   },
   setup(props) {
-    const device = computed(() => devices[props.name]);
+    const current = ref(props.name);
+    const device = computed(() => devicesMap[current.value]);
+    watch(
+      () => props.name,
+      (name) => {
+        current.value = name;
+      }
+    );
 
-    return { device, devices };
+    return { device, devices, current };
   },
 });
 </script>
 
 <template>
-  <FreeformDevice v-if="name === 'freeform'" v-bind="$attrs">
-    <slot />
-  </FreeformDevice>
-  <template v-else-if="device">
-    <ConfiguredDevice v-bind="$attrs" :device="device">
+  <component
+    :is="device != null ? 'ConfiguredDevice' : 'FreeformDevice'"
+    v-bind="$attrs"
+    :device="device"
+  >
+    <template #default>
       <slot />
-    </ConfiguredDevice>
-  </template>
-  <div v-else>
-    Error: Unsupported device: {{ name }}
+    </template>
 
-    <pre>Configured Devices: {{ Array.from(Object.keys(devices)) }}</pre>
-  </div>
+    <template #pre-controls>
+      <DeviceSelector v-model="current" />
+    </template>
+
+    <template #post-controls>
+      <slot name="controls" />
+    </template>
+  </component>
 </template>

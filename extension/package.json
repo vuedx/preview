@@ -121,8 +121,19 @@
           "group": "z_commands"
         }
       ]
-    }
+    },
+    "languages": [
+      {
+        "id": "vue",
+        "extensions": [
+          ".vue.p"
+        ]
+      }
+    ]
   },
+  "extensionDependencies": [
+    "znck.vue"
+  ],
   "engines": {
     "vscode": "^1.52.0"
   },

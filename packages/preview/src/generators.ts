@@ -1,6 +1,6 @@
-import type { SFCDescriptor } from '@vuedx/compiler-sfc';
 import * as FS from 'fs';
 import * as Path from 'path';
+import type { ExtendedSFCDescriptor } from './store/DescriptorStore';
 import { ComponentResourceType, resourceToID, ResourceType } from './virtual-resource';
 
 export function genPreviewIFrameContent(
@@ -42,7 +42,7 @@ export function genPreviewAppEntryScript(
     fileName: string;
     index?: number | undefined;
   },
-  descriptor: SFCDescriptor
+  descriptor: ExtendedSFCDescriptor
 ): string {
   const instance = resourceToID({
     type: ComponentResourceType.COMPONENT,
@@ -50,7 +50,7 @@ export function genPreviewAppEntryScript(
     index: resource.index,
   });
   const setup = ResourceType.USER_SETUP;
-  const block = resource.index != null ? descriptor.customBlocks[resource.index] : null;
+  const block = resource.index != null ? descriptor.previews[resource.index] : null;
 
   return [
     `import { createApp, x } from '${setup}'`,
