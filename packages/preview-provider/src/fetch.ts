@@ -37,8 +37,7 @@ export function useRequests(options: RequestOptions): void {
           let query: string | null = null;
           if (type?.toUpperCase() === 'QUERY') {
             if (request.method === 'GET') {
-              const requestURL = new URL(request.url);
-              query = requestURL.searchParams.get('query');
+              query = getSearchParams(request.url).get('query');
             }
           }
 
@@ -93,10 +92,10 @@ export function useRequests(options: RequestOptions): void {
 function matches(url: string, pattern: string): boolean {
   if (pattern === '*') return true;
   if (pattern.includes('*')) {
-    return matchPattern(pattern.startsWith('/') ? new URL(url).pathname : url, pattern);
+    return matchPattern(pattern.startsWith('/') ? getPathName(url) : url, pattern);
   }
   if (pattern.startsWith('/')) {
-    return new URL(url).pathname === pattern;
+    return getPathName(url) === pattern;
   }
 
   return url === pattern;
@@ -180,4 +179,22 @@ async function getInterceptor(request: Request): Promise<InterceptorRecord | nul
   }
 
   return null;
+}
+
+function getPathName(url: string): string {
+  try {
+    return new URL(url).pathname;
+  } catch {
+    return url.replace(/^[^/]+:\/\/[^/]+/, '');
+  }
+}
+
+function getSearchParams(url: string): URLSearchParams {
+  try {
+    return new URL(url).searchParams;
+  } catch {
+    const index = url.indexOf('?');
+
+    return index < 0 ? new URLSearchParams() : new URLSearchParams(url.substr(index + 1));
+  }
 }
