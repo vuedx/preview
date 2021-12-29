@@ -36,7 +36,7 @@
   import { PreviewPlugin } from '@vuedx/preview';
 
   export default {
-    plugins: [VuePlugin(), PrevivewPlugin()],
+    plugins: [VuePlugin(), PreviewPlugin()],
   };
   ```
 
