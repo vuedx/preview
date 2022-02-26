@@ -7,10 +7,11 @@ const props = defineProps({
 });
 
 const emit = defineEmits({
-  'update:active': (value?: string) => true,
+  'update:active': (_value?: string) => true,
 });
 
 const search = ref('');
+const showGenerated = ref(false);
 const current = computed({
   get: () => props.active,
   set: (value) => emit('update:active', value),
@@ -18,7 +19,10 @@ const current = computed({
 
 const filtered = computed(() => {
   const text = unref(search).toLowerCase();
-  const items = unref(components);
+  let items = unref(components);
+  if (!unref(showGenerated)) {
+    items = items.filter((item) => item.previews.length > 0);
+  }
 
   if (text === '') {
     const collator = new Intl.Collator(undefined, {
@@ -64,6 +68,11 @@ const filtered = computed(() => {
           placeholder="Filter components..."
         />
 
+        <label class="block mt-1 mb-2">
+          <input type="checkbox" v-model="showGenerated" checked class="mr-1" />
+          <span class="text-xs text-gray-700">Show generated 🤖</span>
+        </label>
+
         <slot name="controls" />
       </form>
     </header>
@@ -75,31 +84,19 @@ const filtered = computed(() => {
         style="top: 179px; bottom: 0px"
       >
         <label
-          class="
-            py-2
-            px-4
-            block
-            transition
-            duration-500
-            ease-in-out
-            cursor-pointer
-            hover:bg-gray-200
-            focus:bg-gray-200
-            focus-within:bg-gray-200
-          "
+          class="py-2 px-4 block transition duration-500 ease-in-out cursor-pointer hover:bg-gray-200 focus:bg-gray-200 focus-within:bg-gray-200"
           :title="component.path"
         >
           <input type="radio" v-model="current" :value="component.path" class="sr-only" />
-          {{ component.name }}
+          <span class="break-all">{{ component.name }}</span>
           <span
-            class="
-              block
-              overflow-ellipsis overflow-x-hidden
-              italic
-              whitespace-nowrap
-              -mt-1
-              text-gray-400 text-xs
-            "
+            title="Only auto-generated preview available"
+            class="ml-1"
+            v-if="component.previews.length === 0"
+            >🤖</span
+          >
+          <span
+            class="block overflow-ellipsis overflow-x-hidden italic whitespace-nowrap -mt-1 text-gray-400 text-xs"
             >{{ component.path }}</span
           >
         </label>
