@@ -160,9 +160,12 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Publish Extension
         run: |
+          pnpm recursive --filter ./extension run build
           pnpm recursive --filter ./extension run release
+          pnpm -y osvx publish -p ${OVSX_REGISTRY_TOKEN} ./extension/preview.vsix
         env:
           VSCODE_MARKETPLACE_TOKEN: ${{ secrets.VSCODE_MARKETPLACE_TOKEN }}
+          OVSX_REGISTRY_TOKEN: ${{ secrets.OVSX_REGISTRY_TOKEN }}
         continue-on-error: true
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
