@@ -1,9 +1,10 @@
 {
   "private": true,
-  "version": "0.4.0",
+  "version": "0.4.1",
   "name": "preview",
   "publisher": "znck",
-  "displayName": "Preview - VueDX",
+  "displayName": "Preview",
+  "description": "A storyboarding and prototyping tool for Vue.",
   "main": "dist/extension.js",
   "icon": "logo.png",
   "buildConfig": {
@@ -135,22 +136,21 @@
     "znck.vue"
   ],
   "engines": {
-    "vscode": "^1.52.0"
+    "vscode": "^1.63.0"
   },
   "devDependencies": {
     "@types/node": "^14.14.22",
     "@types/node-fetch": "^2.5.8",
-    "@types/vscode": "^1.52.0",
+    "@types/vscode": "^1.63.0",
     "@vuedx/preview": "workspace:*",
     "get-port": "^5.1.1",
-    "node-fetch": "^2.6.1",
-    "vsce": "^1.84.0"
+    "node-fetch": "^3.2.0",
+    "semver": "^7.3.5",
+    "vsce": "^2.6.7"
   },
   "scripts": {
-    "prerelease": "npm run bundle",
+    "build": "node scripts/build.mjs",
     "release": "vsce publish -p ${VSCODE_MARKETPLACE_TOKEN} --packagePath ./preview.vsix",
-    "prebundle": "node scripts/prepare",
-    "bundle": "vsce package --out preview.vsix",
-    "postbundle": "node scripts/revert"
+    "pre-release": "vsce publish --pre-release -p ${VSCODE_MARKETPLACE_TOKEN} --packagePath ./preview.vsix"
   }
 }
