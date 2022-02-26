@@ -36,7 +36,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v2
         with:
-          node-version: '14'
+          node-version: '16'
       - name: Setup PNPM
         uses: pnpm/action-setup@v2.0.1
         with:
@@ -62,11 +62,11 @@ jobs:
           - ubuntu-latest
           - windows-latest
         node_version:
-          - '12'
           - '14'
+          - '16'
         include:
           - os: ubuntu-latest
-            node: '14'
+            node: '16'
             command: coverage
     runs-on: ${{ matrix.os }}
     name: Node ${{ matrix.node_version }} on ${{ matrix.os }}
@@ -112,16 +112,12 @@ jobs:
         uses: codecov/codecov-action@v1
         with:
           file: ./coverage/coverage-final.json
-  insiders:
-    name: Insiders Release
+  pre-release:
+    name: Pre-release
     runs-on: ubuntu-latest
-    environment:
-      name: Insiders
-      url: >-
-        https://marketplace.visualstudio.com/items?itemName=znck.preview-insiders
     needs: unit
     concurrency:
-      group: insiders
+      group: pre-release
       cancel-in-progress: true
     steps:
       - name: Checkout
@@ -144,7 +140,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v2
         with:
-          node-version: '14'
+          node-version: '16'
       - name: Setup PNPM
         uses: pnpm/action-setup@v2.0.1
         with:
@@ -157,32 +153,24 @@ jobs:
         with:
           name: build-artefact
           path: .
-      - name: Publish Insiders Extension
+      - name: Publish Pre-release Extension
         run: |
-          pnpm recursive --filter ./extension run release
+          pnpm recursive --filter ./extension run build
+          pnpm recursive --filter ./extension run pre-release
         env:
-          RELEASE_CHANNEL: insiders
+          RELEASE_CHANNEL: pre-release
           VSCODE_MARKETPLACE_TOKEN: ${{ secrets.VSCODE_MARKETPLACE_TOKEN }}
-      - name: Publish Insiders Packages
+      - name: Publish Pre-release Packages
         run: >
           echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' > .npmrc
 
           pnpm recursive --filter ./packages exec -- npm version prerelease
-          --preid=insiders-$(date +%s)
+          --preid=next-$(date +%s)
 
-          pnpm recursive --filter ./packages publish --tag insiders --access
-          public --no-git-checks
+          pnpm recursive --filter ./packages publish --tag next --access public
+          --no-git-checks
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - uses: marvinpinto/action-automatic-releases@latest
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          automatic_release_tag: insiders
-          prerelease: true
-          files: |
-            extension/CHANGELOG.md
-            extension/preview.vsix
-            packages/*/CHANGELOG.md
   check_release:
     name: Check Release
     runs-on: ubuntu-latest
@@ -221,7 +209,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v2
         with:
-          node-version: '14'
+          node-version: '16'
       - name: Setup PNPM
         uses: pnpm/action-setup@v2.0.1
         with:
