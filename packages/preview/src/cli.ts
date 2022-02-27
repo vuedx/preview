@@ -2,8 +2,6 @@ import chalk from 'chalk';
 import * as Path from 'path';
 import * as FS from 'fs';
 import { createServer } from 'vite';
-import { version as viteVersion } from 'vite/package.json';
-import { version as previewVersion } from '../package.json';
 import { PreviewPlugin } from './index';
 import VuePlugin from '@vitejs/plugin-vue';
 
@@ -38,7 +36,14 @@ export async function run(argv: {
 
   const command = argv._[0];
 
-  console.log(chalk.cyan(`Preview v${previewVersion} (vite v${viteVersion})`));
+  const { version: previewVersion } = JSON.parse(
+    FS.readFileSync(require.resolve('../package.json'), 'utf-8')
+  );
+  const { version: viteVersion } = JSON.parse(
+    FS.readFileSync(require.resolve('vite/package.json'), 'utf-8')
+  );
+
+  console.log(chalk.cyan(`Preview v${String(previewVersion)} (vite v${String(viteVersion)})`));
   const { help, h, version, v } = argv;
 
   if (help || h) {

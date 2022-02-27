@@ -115,6 +115,7 @@ importers:
     specifiers:
       '@rollup/plugin-json': ^4.1.0
       '@types/debug': ^4.1.5
+      '@types/etag': ^1.8.1
       '@vitejs/plugin-vue': ^1.2.3
       '@vue/compiler-sfc': ^3.1.1
       '@vuedx/analyze': ^0.6.0
@@ -124,6 +125,7 @@ importers:
       '@vuedx/preview-shell': workspace:*
       chalk: ^4.1.0
       debug: ^4.3.1
+      etag: ^1.8.1
       fast-glob: ^3.2.5
       minimist: ^1.2.5
       picomatch: ^2.2.2
@@ -141,6 +143,7 @@ importers:
       '@vuedx/preview-shell': link:../preview-shell
       chalk: 4.1.0
       debug: 4.3.1
+      etag: 1.8.1
       fast-glob: 3.2.5
       minimist: 1.2.5
       picomatch: 2.2.2
@@ -150,6 +153,7 @@ importers:
     devDependencies:
       '@rollup/plugin-json': 4.1.0_rollup@2.66.1
       '@types/debug': 4.1.5
+      '@types/etag': 1.8.1
       '@vuedx/analyze': 0.6.0
       typescript: 4.3.2
       vue: 3.1.1
@@ -3663,6 +3667,12 @@ packages:
     resolution: {integrity: sha512-C6N5s2ZFtuZRj54k2/zyRhNDjJwwcViAM3Nbm8zjBpbqAdZ00mr0CFxvSKeO8Y/e03WVFLpQMdHYVfUd6SB+Hw==}
     dev: true
 
+  /@types/etag/1.8.1:
+    resolution: {integrity: sha512-bsKkeSqN7HYyYntFRAmzcwx/dKW4Wa+KVMTInANlI72PWLQmOpZu96j0OqHZGArW4VQwCmJPteQlXaUDeOB0WQ==}
+    dependencies:
+      '@types/node': 17.0.14
+    dev: true
+
   /@types/graceful-fs/4.1.5:
     resolution: {integrity: sha512-anKkLmZZ+xm4p8JWBf4hElkM4XR+EZeA2M9BAkkTldmcyDY4mbdIJnRghDJH3Ov5ooY7/UAoENtmdMSkaAd7Cw==}
     dependencies:
@@ -6214,6 +6224,11 @@ packages:
   /esutils/2.0.3:
     resolution: {integrity: sha512-kVscqXk4OCp68SZ0dkgEKVi6/8ij300KBWTJq32P/dYeWTSwK41WyTxalN1eRmA5Z9UU/LX9D7FWSmV9SAYx6g==}
     engines: {node: '>=0.10.0'}
+
+  /etag/1.8.1:
+    resolution: {integrity: sha1-Qa4u62XvpiJorr/qg6x9eSmbCIc=}
+    engines: {node: '>= 0.6'}
+    dev: false
 
   /exec-sh/0.3.6:
     resolution: {integrity: sha512-nQn+hI3yp+oD0huYhKwvYI32+JFeq+XkNcD1GAo3Y/MjxsfVGmrrzrnzjWiNY6f+pUCP440fThsFh5gZrRAU/w==}

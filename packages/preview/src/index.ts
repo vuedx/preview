@@ -2,13 +2,14 @@ import glob from 'fast-glob';
 import * as FS from 'fs';
 import * as Path from 'path';
 import sirv from 'sirv';
-import { ModuleNode, Plugin, send } from 'vite';
+import type { ModuleNode, Plugin } from 'vite';
 import {
   genEntryHTML,
   genPreviewAppEntryScript,
   genPreviewIFrameContent,
   genVSCodeKeyboardEventSupport,
 } from './generators';
+import { send } from './send';
 import { ComponentMetadataStore } from './store/ComponentMetadataStore';
 import { DescriptorStore } from './store/DescriptorStore';
 import type { FileSystemHost } from './store/FileSystemHost';
@@ -265,7 +266,10 @@ function PreviewPlugin(options?: PreviewPluginOptions): Plugin[] {
                 Path.resolve(store.root, resource.fileName)
               );
             } else {
-              return compiler.compile(Path.resolve(store.root, resource.fileName), resource.index);
+              return await compiler.compile(
+                Path.resolve(store.root, resource.fileName),
+                resource.index
+              );
             }
           }
 
