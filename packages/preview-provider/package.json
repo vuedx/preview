@@ -4,6 +4,11 @@
   "peerDependencies": {
     "vue": "^3.0.5"
   },
+  "peerDependenciesMeta": {
+    "vue": {
+      "optional": true
+    }
+  },
   "main": "dist/preview-provider.js",
   "module": "dist/preview-provider.mjs",
   "types": "src/index.ts",

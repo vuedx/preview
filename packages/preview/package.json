@@ -52,7 +52,7 @@
     "picomatch": "^2.2.2",
     "quick-lru": "^6.0.0",
     "sirv": "^1.0.10",
-    "vite": "^2.3.6"
+    "vite": "^2.8.4"
   },
   "peerDependencies": {
     "@vuedx/analyze": "^0.6.0"
