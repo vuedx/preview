@@ -30,13 +30,13 @@ on:
   - name: Setup Node
     uses: actions/setup-node@v2
     with:
-      node-version: "16"
+      node-version: '16'
 
 .pnpm: &pnpm
   - name: Setup PNPM
     uses: pnpm/action-setup@v2.0.1
     with:
-      version: "6.2.5"
+      version: '6.2.5'
       run_install: |
         - recursive: true
           args: [--frozen-lockfile]
@@ -52,7 +52,7 @@ on:
     uses: actions/download-artifact@v2
     with:
       name: build-artefact
-      path: "."
+      path: '.'
 
 concurrency:
   group: build-${{ github.ref }}
@@ -81,11 +81,11 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        node_version: ["14", "16"]
+        node_version: ['14', '16']
         include:
           - os: ubuntu-latest
-            node: "16"
-            command: "coverage"
+            node: '16'
+            command: 'coverage'
     runs-on: ${{ matrix.os }}
     name: Node ${{ matrix.node_version }} on ${{ matrix.os }}
     continue-on-error: ${{ startsWith(github.event.head_commit.message, 'release:') }}
@@ -125,8 +125,8 @@ jobs:
           VSCODE_MARKETPLACE_TOKEN: ${{ secrets.VSCODE_MARKETPLACE_TOKEN }}
       - name: Publish Pre-release Packages
         run: |
+          pnpm recursive --filter ./packages exec -- pnpm version prerelease --no-commit-hooks --no-git-tag-version --preid=next-$(date +%s)
           echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' > .npmrc
-          pnpm recursive --filter ./packages exec -- npm version prerelease --preid=next-$(date +%s)
           pnpm recursive --filter ./packages publish --tag next --access public --no-git-checks
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -167,10 +167,10 @@ jobs:
           VSCODE_MARKETPLACE_TOKEN: ${{ secrets.VSCODE_MARKETPLACE_TOKEN }}
           OVSX_REGISTRY_TOKEN: ${{ secrets.OVSX_REGISTRY_TOKEN }}
         continue-on-error: true
-      - uses: "marvinpinto/action-automatic-releases@latest"
+      - uses: 'marvinpinto/action-automatic-releases@latest'
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "latest"
+          repo_token: '${{ secrets.GITHUB_TOKEN }}'
+          automatic_release_tag: 'latest'
           prerelease: false
           files: |
             extension/CHANGELOG.md

@@ -14,7 +14,7 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    if: '!startsWith(github.event.head_commit.message, ''skip ci'')'
+    if: "!startsWith(github.event.head_commit.message, 'skip ci')"
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -161,10 +161,10 @@ jobs:
           VSCODE_MARKETPLACE_TOKEN: ${{ secrets.VSCODE_MARKETPLACE_TOKEN }}
       - name: Publish Pre-release Packages
         run: >
-          echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' > .npmrc
+          pnpm recursive --filter ./packages exec -- pnpm version prerelease
+          --no-commit-hooks --no-git-tag-version --preid=next-$(date +%s)
 
-          pnpm recursive --filter ./packages exec -- npm version prerelease
-          --preid=next-$(date +%s)
+          echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' > .npmrc
 
           pnpm recursive --filter ./packages publish --tag next --access public
           --no-git-checks
@@ -228,10 +228,16 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Publish Extension
-        run: |
+        run: >
+          pnpm recursive --filter ./extension run build
+
           pnpm recursive --filter ./extension run release
+
+          pnpm -y osvx publish -p ${OVSX_REGISTRY_TOKEN}
+          ./extension/preview.vsix
         env:
           VSCODE_MARKETPLACE_TOKEN: ${{ secrets.VSCODE_MARKETPLACE_TOKEN }}
+          OVSX_REGISTRY_TOKEN: ${{ secrets.OVSX_REGISTRY_TOKEN }}
         continue-on-error: true
       - uses: marvinpinto/action-automatic-releases@latest
         with:

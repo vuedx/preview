@@ -35,10 +35,6 @@
     "changeset": "changeset",
     "prepare": "husky install"
   },
-  "lint-staged": {
-    "*.js": "eslint --cache --fix",
-    "*.{js,css,md}": "prettier --write"
-  },
   "pnpm": {
     "overrides": {
       "vite": "2.5.0",
