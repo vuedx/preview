@@ -1,5 +1,13 @@
 # @vuedx/preview-provider
 
+## 0.1.6
+
+### Patch Changes
+
+- d74efa5: fetch stub for delayed response
+
+  - `$p.http.delayed()`
+
 ## 0.1.5
 
 ### Patch Changes

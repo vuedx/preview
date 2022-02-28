@@ -1,5 +1,12 @@
 # @vuedx/preview-test-utils
 
+## 0.2.3
+
+### Patch Changes
+
+- Updated dependencies [d74efa5]
+  - @vuedx/preview-provider@0.1.6
+
 ## 0.2.2
 
 ### Patch Changes

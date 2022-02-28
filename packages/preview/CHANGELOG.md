@@ -1,5 +1,15 @@
 # @vuedx/preview
 
+## 0.3.1
+
+### Patch Changes
+
+- Updated dependencies [d74efa5]
+- Updated dependencies [d74efa5]
+- Updated dependencies [d74efa5]
+  - @vuedx/preview-provider@0.1.6
+  - @vuedx/preview-shell@0.3.1
+
 ## 0.3.0
 
 ### Minor Changes
