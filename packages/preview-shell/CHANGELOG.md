@@ -1,5 +1,12 @@
 # @vuedx/preview-shell
 
+## 0.3.1
+
+### Patch Changes
+
+- d74efa5: Global overrides for device and zoom
+- d74efa5: Filter components
+
 ## 0.3.0
 
 ### Minor Changes
