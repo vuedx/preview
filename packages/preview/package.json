@@ -50,7 +50,7 @@
     "debug": "^4.3.1",
     "etag": "^1.8.1",
     "fast-glob": "^3.2.5",
-    "minimist": "^1.2.5",
+    "minimist": "^1.2.6",
     "picomatch": "^2.2.2",
     "quick-lru": "^6.0.0",
     "sirv": "^1.0.10",
